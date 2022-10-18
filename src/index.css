@@ -1,0 +1,25 @@
+*{
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+body{
+  overflow-x: hidden;
+  
+}
+body::-webkit-scrollbar{
+  width:.4rem;
+ 
+ }
+ body::-webkit-scrollbar-thumb{
+      background: #8b64ef;
+      border-radius: 0.5rem;
+  }
+
+
+input,button{
+  outline: none;
+  border: none;
+}
+
