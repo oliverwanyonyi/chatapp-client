@@ -76,6 +76,7 @@ const Room = ({ showProfile, setShowProfile }) => {
       }
     });
   }, [selectedChat?._id, notifications]);
+
   useEffect(() => {
     lastMessageRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);

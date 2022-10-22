@@ -6,6 +6,7 @@ import { format } from "timeago.js";
 import { getChatsRoute } from "../api";
 import { ChatAppState } from "../AppContext/AppProvider";
 import { getChatDetails } from "../utils/getChatDetails";
+import getMessageTimeStamp from "../utils/time";
 import Loader from "./Loader";
 import Modal from "./Modal";
 import SearchUsers from "./SearchUsers";
@@ -29,7 +30,8 @@ const ChatSidebar = () => {
     setFetchChats,
     chats,
     setChats,
-    onlineUsers,setOnlineUsers
+    onlineUsers,
+    setOnlineUsers,
   } = ChatAppState();
 
   const handleClick = (chat) => {
@@ -58,14 +60,14 @@ const ChatSidebar = () => {
 
   const getChats = async () => {
     try {
-      setLoading(true)
+      setLoading(true);
       const { data } = await axios.get(`${getChatsRoute}/${currentUser?.id}`);
-      
+
       setChats(data);
-      setLoading(false)
+      setLoading(false);
     } catch (error) {
       console.log(error);
-      setLoading(false)
+      setLoading(false);
     }
   };
 
@@ -147,7 +149,7 @@ const ChatSidebar = () => {
           onClick={() => setShowSearch(!showSearch)}
         >
           <i className="fas fa-search"></i>
-          Search user to start a conversation with
+          Search user and click to start a conversation
         </div>
 
         <SearchUsers
@@ -187,26 +189,25 @@ const ChatSidebar = () => {
                     <div className="contact-info-wrapper">
                       <h2>
                         {getChatDetails(currentUser, chat.users).username}
+                        <span className="time-stamp">
+                          {getMessageTimeStamp(chat.lastMessage.time)}
+                        </span>
                       </h2>
                       <p>
                         {typingStatus && typingId === chat._id
                           ? typingStatus
                           : chat.lastMessage.text
-                          ? `${chat.lastMessage.text} ${format(
-                              chat.lastMessage.time
-                            )}`
-                          : `send your first message to ${
-                              getChatDetails(currentUser, chat.users).username
-                            }`}
+                          ? `${chat.lastMessage.text} 
+                             
+                            `
+                          : "No messages here yet"}
                       </p>
                     </div>
                   </div>
                 </div>
               ))
           ) : (
-            <p className="info">
-              No previous conversations
-            </p>
+            <p className="info">No previous conversations</p>
           )}
         </div>
         <button className="logout-btn" onClick={handleLogout}>
@@ -219,12 +220,12 @@ const ChatSidebar = () => {
 };
 const Container = styled.div`
   width: 30%;
-  padding: 20px 30px;
+  padding: 20px 10px;
   /* display:none; */
   position: relative;
   p.info {
     font-size: 14px;
-    text-align:center;
+    text-align: center;
   }
   .logout-btn {
     position: fixed;
@@ -258,7 +259,6 @@ const Container = styled.div`
       height: 4rem;
       border-radius: 50%;
       overflow: hidden;
-
       img {
         width: 100%;
         height: 100%;
@@ -382,6 +382,7 @@ const Container = styled.div`
       cursor: pointer;
       padding: 10px;
       border-radius: 10px;
+
       &.selected {
         background: #ececec;
       }
@@ -390,7 +391,7 @@ const Container = styled.div`
         .online-badge {
           position: absolute;
           right: 5px;
-          top: 3px;
+          top: 2px;
           height: 10px;
           width: 10px;
           border-radius: 50%;
@@ -400,12 +401,11 @@ const Container = styled.div`
           width: 3rem;
           height: 3rem;
           border-radius: 50%;
-         
           object-fit: cover;
         }
       }
       .contact-info {
-        width: calc(100% - 6rem);
+        width: calc(100% - 3rem);
         display: flex;
         align-items: center;
         justify-content: space-between;
@@ -420,6 +420,9 @@ const Container = styled.div`
           align-items: center;
           justify-content: center;
         }
+        .contact-info-wrapper{
+          width:100%;
+        }
         h2 {
           color: #6c37f3;
           margin-bottom: 3px;
@@ -427,6 +430,15 @@ const Container = styled.div`
           font-weight: 600;
           margin-bottom: 10px;
           text-transform: capitalize;
+          display: flex;
+          width: 100%;
+          justify-content: space-between;
+          align-items: flex-start;
+          span.time-stamp{
+            color: #292929;
+            font-size: 13px;
+            text-transform: none;
+          }
         }
 
         .status {

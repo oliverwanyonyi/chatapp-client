@@ -81,7 +81,7 @@ const SearchUsers = ({
               searchResult.map((res,idx) => (
                 <div className="search-result" onClick={() => createChat(res)} key={idx}>
                   <div className="search-result-avatar">
-                    <img src={user} alt="" />
+                    <img src={res.avatar} alt="" />
                   </div>
                   <h3>{res.username}</h3>
                 </div>
