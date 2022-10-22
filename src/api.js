@@ -1,9 +1,22 @@
-const host = "https://tiktalk.herokuapp.com";
-const registerRoute = `${host}/api/users/register`
-const loginRoute = `${host}/api/users/login`
-const profileRoute = `${host}/api/users`
+const host = "https://talktooapi.herokuapp.com";
+// const host = "http://localhost:5000"
+const registerRoute = `${host}/api/users/register`;
+const loginRoute = `${host}/api/users/login`;
+const profileRoute = `${host}/api/users`;
 
-const getUsersRoute = `${host}/api/users`
-const messageRoute = `${host}/api/message`
+const getUsersRoute = `${host}/api/users`;
+const createChatRoute = `${host}/api/chat/create`;
+const getChatsRoute = `${host}/api/chat`;
 
-export {registerRoute,loginRoute,getUsersRoute,messageRoute,profileRoute,host}
+const messageRoute = `${host}/api/message`;
+
+export {
+  registerRoute,
+  loginRoute,
+  getUsersRoute,
+  messageRoute,
+  profileRoute,
+  getChatsRoute,
+  createChatRoute,
+  host,
+};

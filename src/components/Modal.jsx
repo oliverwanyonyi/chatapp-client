@@ -2,14 +2,16 @@ import axios from "axios";
 import React, { useEffect, useState } from "react";
 import styled from "styled-components";
 import { profileRoute } from "../api";
+import { ChatAppState } from "../AppContext/AppProvider";
 import { handleFileUpload } from "../utils/fileUpload";
 
-const Modal = ({ showModal, setShowModal, currentUser, setCurrentUser }) => {
+const Modal = ({ showModal, setShowModal }) => {
   const [bio, setBio] = useState("");
   const [loading, setLoading] = useState(false);
   const [loadingImageUpload,setLoadingImageUpload] = useState()
   const [avatar,setAvatar] = useState();
   const [avatarPreview, setAvatarPreview] = useState();
+  const {currentUser,setCurrentUser} = ChatAppState();
   const changeHandler = (e) => {
     setBio(e.target.value);
   };
@@ -33,15 +35,17 @@ const Modal = ({ showModal, setShowModal, currentUser, setCurrentUser }) => {
           "Content-Type": "application/json",
         },
       };
+      console.log(avatar)
       const { data } = await axios.put(
         `${profileRoute}/${currentUser.id}`,
+       
         { bio,avatar:avatar },
         config
       );
-      const user = JSON.parse(localStorage.getItem("tiktalk-user"));
+      const user = JSON.parse(localStorage.getItem("talktoo-user"));
       user.bio = data.user.bio;
       user.avatar = data.user.avatar
-      localStorage.setItem("tiktalk-user", JSON.stringify(user));
+      localStorage.setItem("talktoo-user", JSON.stringify(user));
       setCurrentUser({ ...currentUser, bio: data.user.bio, avatar:data.user.avatar });
       setLoading(false);
       setShowModal(false);

@@ -1,28 +1,30 @@
-import React, { useState } from 'react'
-import styled from 'styled-components'
-import Profile from './Profile'
-import Room from './Room'
+import React, { useState } from "react";
+import styled from "styled-components";
+import { ChatAppState } from "../AppContext/AppProvider";
+import Profile from "./Profile";
+import Room from "./Room";
 
-const ChatBody = ({selectedChat,setSelectedChat,currentUser,socket,chats}) => {
-  const [showProfile,setShowProfile] = useState(false)
+const ChatBody = () => {
+  const [showProfile, setShowProfile] = useState(false);
+  const { selectedChat } = ChatAppState();
   return (
-    <Container className={selectedChat? "visible":""}>
-      <Room setShowProfile={setShowProfile} showProfile={showProfile} selectedChat={selectedChat} currentUser={currentUser} socket={socket} setSelectedChat={setSelectedChat}/>
-      <Profile showProfile={showProfile} setShowProfile={setShowProfile} selectedChat={selectedChat}/>
+    <Container className={selectedChat ? "visible" : ""}>
+      <Room setShowProfile={setShowProfile} showProfile={showProfile} />
+      <Profile showProfile={showProfile} setShowProfile={setShowProfile} />
     </Container>
-  )
-}
+  );
+};
 const Container = styled.div`
-  display:flex;
-width: 70%;
-overflow-x: hidden;
+  display: flex;
+  width: 70%;
+  overflow-x: hidden;
 
-@media(max-width:768px){
-  width: 100%;
-  display: none;
-  &.visible{
-    display: flex;
+  @media (max-width: 768px) {
+    width: 100%;
+    display: none;
+    &.visible {
+      display: flex;
+    }
   }
-}
-`
-export default ChatBody
+`;
+export default ChatBody;

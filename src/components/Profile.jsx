@@ -1,19 +1,22 @@
 import React from 'react'
 import styled from 'styled-components'
 import moment from 'moment'
-const Profile = ({showProfile,setShowProfile,selectedChat}) => {
+import { ChatAppState } from '../AppContext/AppProvider'
+import { getChatDetails } from '../utils/getChatDetails'
+const Profile = ({showProfile,setShowProfile}) => {
+    const {selectedChat,currentUser} = ChatAppState()
   return (
     <Container className={showProfile?"visible":""}>
-        <div className="profile-container">
+       {selectedChat && <div className="profile-container">
             <div className="profile-img">
-                <img src={selectedChat?.avatar} alt="" />
+                <img src={getChatDetails(currentUser,selectedChat?.users).avatar} alt="" />
             </div>
-            <h2 className="profile-name">{selectedChat?.username}</h2>
-            <p>{selectedChat?.email}</p>
-            <p className="profile-bio">{selectedChat?.bio}</p>
-            <p className="date-joined">Joined {moment(selectedChat?.createdAt).fromNow()}</p>
+            <h2 className="profile-name">{getChatDetails(currentUser,selectedChat?.users).username}</h2>
+            <p>{getChatDetails(currentUser,selectedChat?.users).email}</p>
+            <p className="profile-bio">{getChatDetails(currentUser,selectedChat?.users).bio}</p>
+            <p className="date-joined">Joined {moment(getChatDetails(currentUser,selectedChat?.users)?.createdAt).fromNow()}</p>
             <button className="back" onClick={()=>setShowProfile(!showProfile)}>Go back</button>
-        </div>
+        </div>}
     </Container>
   )
 }

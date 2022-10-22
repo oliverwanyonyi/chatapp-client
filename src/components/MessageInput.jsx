@@ -1,7 +1,9 @@
 import axios from "axios";
-import React, { useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import styled from "styled-components";
 import { messageRoute } from "../api";
+import { ChatAppState } from "../AppContext/AppProvider";
+import { getChatDetails } from "../utils/getChatDetails";
 
 const MessageInput = ({
   selectedChat,
@@ -11,26 +13,40 @@ const MessageInput = ({
   socket,
 }) => {
   const [message, setMessage] = useState("");
-  async function sendmessage() {
-    await axios.post(`${messageRoute}/send`, {
-      message,
-      from: currentUser.id,
-      to: selectedChat.userId,
-    });
-  }
+  const {fetchChats,setFetchChats} = ChatAppState()
+  const focusRef = useRef();
+
   function stoppedTyping() {
-    socket.emit("typing-stopped", { to: selectedChat.userId });
+    socket.emit("typing-stopped", { to: getChatDetails(currentUser,selectedChat?.users)._id,chatId:selectedChat?._id });
   }
-  const submitHandler = (e) => {
+  const submitHandler = async (e) => {
     e.preventDefault();
     if (message.length > 0) {
-      sendmessage();
-      setMessages([...messages, { fromSelf: true, message: message }]);
+      const { data } = await axios.post(`${messageRoute}/send`, {
+        message,
+        from: currentUser.id,
+        chatId:selectedChat?._id
+      });
+      console.log(data);
+
+      setMessages([
+        ...messages,
+        {
+          fromSelf: true,
+          message: message,
+          from: currentUser.id,
+          createdAt: data.createdAt,
+        },
+      ]);
       setMessage("");
+      setFetchChats(!fetchChats)
       socket.emit("message-sent", {
         message,
         fromSelf: true,
-        to: selectedChat.userId,
+        to: getChatDetails(currentUser,selectedChat.users)._id,
+        from: currentUser.id,
+        chatId:selectedChat._id,
+        createdAt: data.createdAt,
       });
 
       stoppedTyping();
@@ -42,10 +58,14 @@ const MessageInput = ({
     if (e.target.keyCode !== 13) {
       socket.emit("typing", {
         text: `${currentUser.username} is typing. . .`,
-        to: selectedChat.userId,
+        chatId: selectedChat?._id,
+         to: getChatDetails(currentUser,selectedChat?.users)._id,
       });
     }
   };
+  useEffect(() => {
+    focusRef.current?.focus();
+  },[]);
   return (
     <Container>
       <form onSubmit={submitHandler}>
@@ -54,7 +74,8 @@ const MessageInput = ({
           onChange={(e) => setMessage(e.target.value)}
           value={message}
           onKeyDown={handleTyping}
-          onBlur={() => stoppedTyping()}
+         onBlur={()=>stoppedTyping()}
+          ref={focusRef}
           placeholder="Write Something"
         />
         <button>Send</button>

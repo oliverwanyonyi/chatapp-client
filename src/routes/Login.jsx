@@ -18,7 +18,7 @@ const Login = () => {
         setLoading(false)
         if(data.success){
           
-               localStorage.setItem('tiktalk-user',JSON.stringify(data.user))
+               localStorage.setItem('talktoo-user',JSON.stringify(data.user))
                navigate('/') 
         }else{
           alert(data.message)
@@ -32,10 +32,11 @@ const handleChange = (e) =>{
 setUser({...user,[e.target.name]:e.target.value.trim().toLowerCase()})
 }
 useEffect(() => {
-  if(localStorage.getItem('tiktalk-user')){
+  const user = JSON.parse(localStorage.getItem('talktoo-user'))
+  if(user){
    navigate('/')
   }
- })
+ },[])
   return (
     <FormContainer>
         <form className="form" onSubmit={handleSubmit}>

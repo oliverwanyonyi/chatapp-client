@@ -6,21 +6,21 @@ import { registerRoute } from "../api";
 import { handleFileUpload } from "../utils/fileUpload";
 const Register = () => {
   const [user, setUser] = useState({ username: "", email: "", password: "" });
-const [avatar,setAvatar] = useState();
+  const [avatar, setAvatar] = useState();
   const [avatarPreview, setAvatarPreview] = useState();
   const [loadingImageUpload, setLoadingImageUpload] = useState(false);
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
-    if (localStorage.getItem("tiktalk-user")) {
+    if (localStorage.getItem("talktoo-user")) {
       navigate("/");
     }
   });
 
-  const handleUploadFile = (e) =>{
-    handleFileUpload(e,setLoadingImageUpload,setAvatarPreview,setAvatar)
-  }
+  const handleUploadFile = (e) => {
+    handleFileUpload(e, setLoadingImageUpload, setAvatarPreview, setAvatar);
+  };
   // const handleUploadFile = async (e) => {
   //   const file = e.target.files[0];
 
@@ -35,7 +35,6 @@ const [avatar,setAvatar] = useState();
   //     formData.append("file", file);
   //     formData.append("upload_preset", "tiktalk-app");
   //     formData.append("cloud_name", "wanyonyi");
-      
 
   //     try {
   //       setLoadingImageUpload(true);
@@ -43,8 +42,8 @@ const [avatar,setAvatar] = useState();
   //         body: formData,
   //         method: "POST",
   //       });
-  //       const data = await res.json();   
-        
+  //       const data = await res.json();
+
   //       setAvatar(data.url)
   //       setLoadingImageUpload(false);
   //     } catch (error) {
@@ -59,28 +58,30 @@ const [avatar,setAvatar] = useState();
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if(avatar){
-      try {
-        setLoading(true);
-        const { data } = await axios.post(registerRoute, {...user, avatar:avatar});
-        setLoading(false);
-        if (data.success) {
-          console.log(data.user);
-          localStorage.setItem("tiktalk-user", JSON.stringify(data.user));
-          navigate("/");
-        } else {
-          alert(data.message);
-        }
-      } catch (error) {
-        console.log(error);
-        setLoading(false);
-        console.log(error);
-      }
-    }else{
-      alert("please upload an image")
-    }
+    try {
+      setLoading(true);
+      let newUser = {};
 
-    
+      if (avatar) {
+        newUser = { ...user, avatar: avatar };
+      } else {
+        newUser = user;
+      }
+      const { data } = await axios.post(registerRoute, newUser);
+
+      setLoading(false);
+      if (data.success) {
+        console.log(data.user);
+        localStorage.setItem("talktoo-user", JSON.stringify(data.user));
+        navigate("/");
+      } else {
+        alert(data.message);
+      }
+    } catch (error) {
+      console.log(error);
+      setLoading(false);
+      console.log(error);
+    }
   };
   const handleChange = (e) => {
     setUser({ ...user, [e.target.name]: e.target.value.trim().toLowerCase() });
@@ -88,7 +89,7 @@ const [avatar,setAvatar] = useState();
   return (
     <FormContainer>
       <form className="form" onSubmit={handleSubmit}>
-        <h3>Join TikTalk</h3>
+        <h3>Join TalkToo</h3>
         <div className="form-group upload-group">
           {avatarPreview && (
             <div className="avatar">
@@ -152,7 +153,11 @@ const [avatar,setAvatar] = useState();
         </div>
         <div className="btn-container">
           <button type="submit" disabled={loadingImageUpload || loading}>
-            {loadingImageUpload?"Image uploading please wait": loading ? "Signing you up" : "Register"}
+            {loadingImageUpload
+              ? "Image uploading please wait"
+              : loading
+              ? "Signing you up"
+              : "Register"}
           </button>
         </div>
         <span>

@@ -1,55 +1,44 @@
-
-import React, { useEffect, useState } from "react";
+import React, { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import styled from "styled-components";
-import io from "socket.io-client";
 import ChatBody from "../components/ChatBody";
 import ChatSidebar from "../components/ChatSidebar";
-import { host } from "../api";
-const socket = io.connect(host);
+import { ChatAppState } from "../AppContext/AppProvider";
 
 const Chat = () => {
   const navigate = useNavigate();
-  const [currentUser, setCurrentUser] = useState();
-  const [selectedChat, setSelectedChat] = useState();
+  const { currentUser, setCurrentUser,setNotifications, socket } = ChatAppState();
 
   useEffect(() => {
-    if (!localStorage.getItem("tiktalk-user")) {
-      navigate("/login");
-    } else {
-      setCurrentUser(JSON.parse(localStorage.getItem("tiktalk-user")));
+    if (localStorage.getItem("notifications")) {
+      setNotifications(JSON.parse(localStorage.getItem("notifications")));
     }
   }, []);
-
   useEffect(() => {
-    if (currentUser && socket) {
+    if (!localStorage.getItem('talktoo-user')) {
+      navigate("/login");
+    }else{
+      setCurrentUser(JSON.parse(localStorage.getItem('talktoo-user')))
+    }
+  }, []);
+  
+  useEffect(() => {
+    if (currentUser) {
       socket.emit("join", {
         userId: currentUser.id,
         username: currentUser.username,
         avatar: currentUser.avatar,
-        bio:currentUser.bio,
-        email:currentUser.email,
+        bio: currentUser.bio,
+        email: currentUser.email,
         online: true,
-        createdAt:currentUser.createdAt
+        createdAt: currentUser.createdAt,
       });
     }
   }, [currentUser]);
-
   return (
     <Container>
-      <ChatSidebar
-        currentUser={currentUser}
-        setSelectedChat={setSelectedChat}
-        selectedChat={selectedChat}
-        setCurrentUser={setCurrentUser}
-        socket={socket}
-      />
-      <ChatBody
-        selectedChat={selectedChat}
-        setSelectedChat={setSelectedChat}
-        currentUser={currentUser}
-        socket={socket}
-      />
+      <ChatSidebar />
+      <ChatBody />
     </Container>
   );
 };

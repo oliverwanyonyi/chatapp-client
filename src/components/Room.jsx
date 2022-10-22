@@ -2,27 +2,35 @@ import axios from "axios";
 import React, { useEffect, useRef, useState } from "react";
 import styled from "styled-components";
 import { messageRoute } from "../api";
+import { ChatAppState } from "../AppContext/AppProvider";
 import Loader from "./Loader";
 import MessageInput from "./MessageInput";
-const Room = ({
-  showProfile,
-  setShowProfile,
-  selectedChat,
-  setSelectedChat,
-  currentUser,
-  socket,
-}) => {
+import { format } from "timeago.js";
+import { getChatDetails } from "../utils/getChatDetails";
+const Room = ({ showProfile, setShowProfile }) => {
   const [messages, setMessages] = useState([]);
   const [loadingMessages, setLoadingMessages] = useState(false);
   const lastMessageRef = useRef();
-  const [typingStatus, setTypingStatus] = useState();
-
+  const {
+    notifications,
+    setNotifications,
+    setTypingId,
+    setTypingStatus,
+    typingStatus,
+    currentUser,
+    selectedChat,
+    socket,
+    setSelectedChat,
+    typingId,
+    onlineUsers,
+    fetchChats,setFetchChats
+  } = ChatAppState();
   useEffect(() => {
     const getMessages = async () => {
       try {
         setLoadingMessages(true);
         const { data } = await axios.get(
-          `${messageRoute}/?from=${currentUser?.id}&to=${selectedChat?.userId}`
+          `${messageRoute}/${selectedChat?._id}?from=${currentUser?.id}`
         );
         setMessages(data);
         setLoadingMessages(false);
@@ -30,27 +38,59 @@ const Room = ({
         setLoadingMessages(false);
       }
     };
-    getMessages();
-  }, [selectedChat]);
+    if (currentUser && selectedChat) {
+      getMessages();
+    }
+  }, [selectedChat, currentUser]);
+
   useEffect(() => {
-    socket.on("message-received", (data) => {
-      
-      setMessages([...messages, data]);
+    socket.off("message-received").on("message-received", (data) => {
+      if (selectedChat?._id === data.message.chatId) {
+        setMessages([...messages, data.message]);
+      }
     });
-  }, [socket, messages]);
+  }, [selectedChat?._id, messages]);
+  useEffect(() => {
+    socket.off("new-notification").on("new-notification", (data) => {
+      setFetchChats(!fetchChats)
+
+      if (!selectedChat?._id || selectedChat?._id !== data.chatId) {
+        const notifExists = notifications.findIndex(
+          (notif) => notif.chatId === data.chatId
+        );
+        if (notifExists !== -1) {
+          let newNotifs = notifications;
+          newNotifs[notifExists].count += 1;
+
+          setNotifications([...newNotifs]);
+          localStorage.setItem("notifications", JSON.stringify(newNotifs));
+        } else {
+          setNotifications([data, ...notifications]);
+          localStorage.setItem(
+            "notifications",
+            JSON.stringify([data, ...notifications])
+          );
+        }
+      } else {
+        return;
+      }
+    });
+  }, [selectedChat?._id, notifications]);
   useEffect(() => {
     lastMessageRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
+
   useEffect(() => {
-    socket.on("user-typing", (data) => {
-      setTypingStatus(data);
+    socket.off("user-typing").on("user-typing", (data) => {
+      setTypingStatus(data.text);
+      setTypingId(data.chatId);
     });
-  }, [socket]);
-  useEffect(() => {
-    socket.on("stopped-typing", () => {
+    socket.off("stopped-typing").on("stopped-typing", () => {
       setTypingStatus(null);
+      setTypingId(null);
     });
   }, [socket]);
+
   return (
     <Container className={showProfile ? "streched" : ""}>
       {selectedChat ? (
@@ -61,19 +101,24 @@ const Room = ({
                 className="mobile-show-chats"
                 onClick={() => setSelectedChat(null)}
               >
-                &#8592; back
+                <i className="fas fa-chevron-left"></i>
               </button>
-              <img src={selectedChat.avatar} alt="" />
+              <img
+                src={getChatDetails(currentUser, selectedChat.users).avatar}
+                alt=""
+              />
               <div>
                 <p className="room-name">
-                  {selectedChat?.username}
+                  {getChatDetails(currentUser, selectedChat.users).username}
                 </p>
 
-                {typingStatus && <p className="room-status">{typingStatus}</p>}
+                {typingStatus && selectedChat._id === typingId ? (
+                  <p className="room-status">{typingStatus}</p>
+                ):onlineUsers.includes(getChatDetails(currentUser,selectedChat.users)._id)?<p className="room-status online">online</p>:<p className="room-status offline">offline</p>}
               </div>
             </div>
             <button onClick={() => setShowProfile(!showProfile)}>
-              View profile
+              <i className="fas fa-eye"></i>
             </button>
           </div>
           <div className="room-body">
@@ -90,11 +135,15 @@ const Room = ({
                   key={idx}
                 >
                   <div className="message-sender">
-                    {msg.fromSelf ? "You " : selectedChat.username}
+                    {msg.fromSelf
+                      ? "You "
+                      : getChatDetails(currentUser, selectedChat.users)
+                          .username}
                   </div>
                   <div className="message">
                     <p className="messsage-content">{msg.message}</p>
                   </div>
+                  <span className="time-stamp">{format(msg.createdAt)}</span>
                 </div>
               ))
             ) : (
@@ -194,6 +243,7 @@ const Container = styled.div`
       }
       .room-name {
         color: #6c37f3;
+      }
         .room-status {
           font-size: 13px;
           &.online {
@@ -201,10 +251,8 @@ const Container = styled.div`
           }
           &.offline {
             color: #494949;
-          }
         }
       }
-      
     }
     button {
       background: #6c37f3;
@@ -260,9 +308,12 @@ const Container = styled.div`
         .message-text {
           font-size: 15px;
         }
-        .msg-timestamp {
-          font-size: 14px;
-        }
+      }
+      .time-stamp {
+        font-size: 14px;
+        margin-top: 10px;
+        display: block;
+        color: #494949;
       }
     }
   }
