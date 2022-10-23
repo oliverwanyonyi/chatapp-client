@@ -50,9 +50,7 @@ const MessageInput = ({
       });
 
       stoppedTyping();
-    } else {
-      alert("message tooo short");
-    }
+    } 
   };
   const handleTyping = (e) => {
     if (e.target.keyCode !== 13) {

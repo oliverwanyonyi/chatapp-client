@@ -2,11 +2,10 @@ import axios from "axios";
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import styled from "styled-components";
-import { format } from "timeago.js";
+import moment from 'moment';
 import { getChatsRoute } from "../api";
 import { ChatAppState } from "../AppContext/AppProvider";
 import { getChatDetails } from "../utils/getChatDetails";
-import getMessageTimeStamp from "../utils/time";
 import Loader from "./Loader";
 import Modal from "./Modal";
 import SearchUsers from "./SearchUsers";
@@ -177,20 +176,20 @@ const ChatSidebar = () => {
                 >
                   <div className="contact-profile">
                     <img
-                      src={getChatDetails(currentUser, chat.users).avatar}
+                      src={getChatDetails(currentUser, chat.users)?.avatar}
                       alt=""
                       className="profile"
                     />
                     {onlineUsers.includes(
-                      getChatDetails(currentUser, chat.users)._id
+                      getChatDetails(currentUser, chat.users)?._id
                     ) && <div className="online-badge"></div>}
                   </div>
                   <div className="contact-info">
                     <div className="contact-info-wrapper">
                       <h2>
-                        {getChatDetails(currentUser, chat.users).username}
+                        {getChatDetails(currentUser, chat.users)?.username}
                         <span className="time-stamp">
-                          {getMessageTimeStamp(chat.lastMessage.time)}
+                          {moment(chat.lastMessage.time).fromNow()}
                         </span>
                       </h2>
                       <p>
