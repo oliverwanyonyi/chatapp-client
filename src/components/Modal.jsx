@@ -35,7 +35,7 @@ const Modal = ({ showModal, setShowModal }) => {
           "Content-Type": "application/json",
         },
       };
-      console.log(avatar)
+      
       const { data } = await axios.put(
         `${profileRoute}/${currentUser.id}`,
        
@@ -123,7 +123,6 @@ const Container = styled.div`
     cursor: pointer;
     z-index: 3;
   }
-  /* to be on top of modal overlay which has a z-index of 3 */
   .profile_edit__modal-container {
     position: absolute;
     top: 50%;
@@ -140,7 +139,6 @@ const Container = styled.div`
     border-radius: 10px;
   }
 
-  /* pasted in the rest of the css for the form */
 
   .form-group {
     margin-bottom: 20px;

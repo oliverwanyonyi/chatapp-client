@@ -4,24 +4,33 @@ import styled from "styled-components";
 import ChatBody from "../components/ChatBody";
 import ChatSidebar from "../components/ChatSidebar";
 import { ChatAppState } from "../AppContext/AppProvider";
+import axios from "axios";
+import { notifyRoute } from "../api";
 
 const Chat = () => {
   const navigate = useNavigate();
-  const { currentUser, setCurrentUser,setNotifications, socket } = ChatAppState();
+  const { currentUser, setCurrentUser, setNotifications, socket } =
+    ChatAppState();
+
+  const getNotifs = async () => {
+    const { data } = await axios.get(`${notifyRoute}?userId=${currentUser.id}`);
+    console.log(data);
+    setNotifications(data);
+  };
 
   useEffect(() => {
-    if (localStorage.getItem("notifications")) {
-      setNotifications(JSON.parse(localStorage.getItem("notifications")));
+    if (currentUser) {
+      getNotifs();
     }
-  }, []);
+  }, [currentUser]);
   useEffect(() => {
-    if (!localStorage.getItem('talktoo-user')) {
+    if (!localStorage.getItem("talktoo-user")) {
       navigate("/login");
-    }else{
-      setCurrentUser(JSON.parse(localStorage.getItem('talktoo-user')))
+    } else {
+      setCurrentUser(JSON.parse(localStorage.getItem("talktoo-user")));
     }
   }, []);
-  
+
   useEffect(() => {
     if (currentUser) {
       socket.emit("join", {
@@ -38,6 +47,7 @@ const Chat = () => {
   return (
     <Container>
       <ChatSidebar />
+      
       <ChatBody />
     </Container>
   );

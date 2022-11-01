@@ -7,9 +7,11 @@ import Loader from "./Loader";
 import MessageInput from "./MessageInput";
 import { format } from "timeago.js";
 import { getChatDetails } from "../utils/getChatDetails";
+import Linkify from 'react-linkify'
 const Room = ({ showProfile, setShowProfile }) => {
   const [messages, setMessages] = useState([]);
   const [loadingMessages, setLoadingMessages] = useState(false);
+ 
   const lastMessageRef = useRef();
   const {
     notifications,
@@ -25,6 +27,8 @@ const Room = ({ showProfile, setShowProfile }) => {
     onlineUsers,
     fetchChats,setFetchChats
   } = ChatAppState();
+
+  
   useEffect(() => {
     const getMessages = async () => {
       try {
@@ -61,15 +65,14 @@ const Room = ({ showProfile, setShowProfile }) => {
         if (notifExists !== -1) {
           let newNotifs = notifications;
           newNotifs[notifExists].count += 1;
-
+            newNotifs[notifExists].createdAt = Date.now()
           setNotifications([...newNotifs]);
-          localStorage.setItem("notifications", JSON.stringify(newNotifs));
+
+
+        
         } else {
           setNotifications([data, ...notifications]);
-          localStorage.setItem(
-            "notifications",
-            JSON.stringify([data, ...notifications])
-          );
+
         }
       } else {
         return;
@@ -142,7 +145,7 @@ const Room = ({ showProfile, setShowProfile }) => {
                           .username}
                   </div>
                   <div className="message">
-                    <p className="messsage-content">{msg.message}</p>
+                    <p className="messsage-content"><Linkify>{msg.message}</Linkify></p>
                   </div>
                   <span className="time-stamp">{format(msg.createdAt)}</span>
                 </div>
@@ -286,12 +289,18 @@ const Container = styled.div`
     .message-container {
       width: max-content;
       max-width: 60%;
+      a{
+        font-weight: 600;
+      }
       &.sender {
         align-self: flex-end;
         .message {
           background: #6c37f3;
           color: #ffffff;
           border-radius: 30px 30px 0 30px;
+          a{
+            color:#ff7070;
+          }
         }
       }
       .message-sender {
@@ -306,9 +315,7 @@ const Container = styled.div`
         display: flex;
         border-radius: 30px 30px 30px 0;
         gap: 3rem;
-        .message-text {
-          font-size: 15px;
-        }
+       
       }
       .time-stamp {
         font-size: 14px;

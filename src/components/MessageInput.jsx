@@ -1,7 +1,7 @@
 import axios from "axios";
 import React, { useEffect, useRef, useState } from "react";
 import styled from "styled-components";
-import { messageRoute } from "../api";
+import { messageRoute, notifyRoute } from "../api";
 import { ChatAppState } from "../AppContext/AppProvider";
 import { getChatDetails } from "../utils/getChatDetails";
 
@@ -13,22 +13,32 @@ const MessageInput = ({
   socket,
 }) => {
   const [message, setMessage] = useState("");
-  const {fetchChats,setFetchChats} = ChatAppState()
+  const {fetchChats,setFetchChats,onlineUsers} = ChatAppState()
   const focusRef = useRef();
 
   function stoppedTyping() {
     socket.emit("typing-stopped", { to: getChatDetails(currentUser,selectedChat?.users)._id,chatId:selectedChat?._id });
   }
+
+  const saveNotif  = async (notif)=>{
+    await axios.post(`${notifyRoute}`,{notif})
+  }
+
   const submitHandler = async (e) => {
     e.preventDefault();
     if (message.length > 0) {
-      const { data } = await axios.post(`${messageRoute}/send`, {
+     const {data} =  await axios.post(`${messageRoute}/send`, {
         message,
         from: currentUser.id,
         chatId:selectedChat?._id
       });
-      console.log(data);
-
+     saveNotif({
+      chatId:selectedChat._id,
+      text: `new unread message from ${currentUser.username}`,
+      count: 1,
+      to:getChatDetails(currentUser,selectedChat?.users)._id,
+    })  
+      
       setMessages([
         ...messages,
         {

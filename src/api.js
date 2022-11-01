@@ -9,7 +9,7 @@ const createChatRoute = `${host}/api/chat/create`;
 const getChatsRoute = `${host}/api/chat`;
 
 const messageRoute = `${host}/api/message`;
-
+const notifyRoute = `${host}/api/users/notify`
 export {
   registerRoute,
   loginRoute,
@@ -17,6 +17,6 @@ export {
   messageRoute,
   profileRoute,
   getChatsRoute,
-  createChatRoute,
+  createChatRoute,notifyRoute,
   host,
 };

@@ -2,13 +2,14 @@ import axios from "axios";
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import styled from "styled-components";
-import moment from 'moment';
-import { getChatsRoute } from "../api";
+import moment from "moment";
+import { getChatsRoute, notifyRoute } from "../api";
 import { ChatAppState } from "../AppContext/AppProvider";
 import { getChatDetails } from "../utils/getChatDetails";
 import Loader from "./Loader";
 import Modal from "./Modal";
 import SearchUsers from "./SearchUsers";
+import { format } from "timeago.js";
 const ChatSidebar = () => {
   const [showModal, setShowModal] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -32,7 +33,24 @@ const ChatSidebar = () => {
     onlineUsers,
     setOnlineUsers,
   } = ChatAppState();
-
+  const clearReadNotif = async (chatId, userId) => {
+    try {
+      const config = {
+        headers: {
+          "Content-Type": "application/json",
+        },
+      };
+      console.log(notifyRoute);
+      const { data } = await axios.put(
+        `${notifyRoute}/`,
+        { chatId, userId },
+        config
+      );
+      console.log(data);
+    } catch (error) {
+      console.log(error);
+    }
+  };
   const handleClick = (chat) => {
     setSelectedChat(chat);
 
@@ -40,9 +58,9 @@ const ChatSidebar = () => {
       const newNotifs = notifications.filter(
         (notif) => notif.chatId !== chat._id
       );
-      console.log(chat._id, newNotifs);
+
       setNotifications(newNotifs);
-      localStorage.setItem("notifications", JSON.stringify(newNotifs));
+      clearReadNotif(chat._id, currentUser.id);
     }
   };
 
@@ -52,7 +70,7 @@ const ChatSidebar = () => {
       for (const item of data) {
         users.push(item.userId);
       }
-      console.log(users);
+
       setOnlineUsers(users);
     });
   }, [socket, onlineUsers]);
@@ -114,6 +132,7 @@ const ChatSidebar = () => {
                           "message",
                           `${notif.count > 1 ? "messages" : "message"}`
                         )}
+                        <span>{format(notif.createdAt)}</span>
                       </li>
                     ))
                   ) : (
@@ -129,11 +148,7 @@ const ChatSidebar = () => {
                 onClick={() => setShowNotif(!showNotif)}
               >
                 {notifications.length > 0 && (
-                  <span className="notif-count">
-                    {notifications
-                      .map((notif) => notif.count)
-                      .reduce((count, acc) => count + acc, 0)}
-                  </span>
+                  <span className="notif-count">{notifications.length}</span>
                 )}
               </div>
               <div className="action" onClick={() => setShowModal(!showModal)}>
@@ -192,7 +207,7 @@ const ChatSidebar = () => {
                           {moment(chat.lastMessage.time).fromNow()}
                         </span>
                       </h2>
-                      <p>
+                      <p className="last-message">
                         {typingStatus && typingId === chat._id
                           ? typingStatus
                           : chat.lastMessage.text
@@ -309,8 +324,12 @@ const Container = styled.div`
             padding: 5px 10px;
             line-clamp: 1;
             font-size: 14px;
-            font-weight: 700;
+            font-weight: 600;
             color: #000000;
+            span {
+              font-weight: 700;
+              margin-left: 5px;
+            }
             &.info {
               color: #292929;
               text-align: center;
@@ -419,8 +438,8 @@ const Container = styled.div`
           align-items: center;
           justify-content: center;
         }
-        .contact-info-wrapper{
-          width:100%;
+        .contact-info-wrapper {
+          width: 100%;
         }
         h2 {
           color: #6c37f3;
@@ -433,11 +452,18 @@ const Container = styled.div`
           width: 100%;
           justify-content: space-between;
           align-items: flex-start;
-          span.time-stamp{
+          span.time-stamp {
             color: #292929;
             font-size: 13px;
             text-transform: none;
           }
+        }
+        .last-message {
+          text-overflow: ellipsis;
+          -webkit-line-clamp: 1;
+          -webkit-box-orient: vertical;
+          overflow: hidden;
+          display: -webkit-box;
         }
 
         .status {

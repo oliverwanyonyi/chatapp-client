@@ -87,7 +87,7 @@ const SearchUsers = ({
                 </div>
               ))
             ) : (
-              <p class="info">Your search did't match any results</p>
+              <p className="info">Your search did't match any results</p>
             )}
           </div>
         )}
