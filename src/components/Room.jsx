@@ -7,11 +7,11 @@ import Loader from "./Loader";
 import MessageInput from "./MessageInput";
 import { format } from "timeago.js";
 import { getChatDetails } from "../utils/getChatDetails";
-import Linkify from 'react-linkify'
+import Linkify from "react-linkify";
 const Room = ({ showProfile, setShowProfile }) => {
   const [messages, setMessages] = useState([]);
   const [loadingMessages, setLoadingMessages] = useState(false);
- 
+
   const lastMessageRef = useRef();
   const {
     notifications,
@@ -25,10 +25,10 @@ const Room = ({ showProfile, setShowProfile }) => {
     setSelectedChat,
     typingId,
     onlineUsers,
-    fetchChats,setFetchChats
+    fetchChats,
+    setFetchChats,
   } = ChatAppState();
 
-  
   useEffect(() => {
     const getMessages = async () => {
       try {
@@ -56,7 +56,7 @@ const Room = ({ showProfile, setShowProfile }) => {
   }, [selectedChat?._id, messages]);
   useEffect(() => {
     socket.off("new-notification").on("new-notification", (data) => {
-      setFetchChats(!fetchChats)
+      setFetchChats(!fetchChats);
 
       if (!selectedChat?._id || selectedChat?._id !== data.chatId) {
         const notifExists = notifications.findIndex(
@@ -65,14 +65,10 @@ const Room = ({ showProfile, setShowProfile }) => {
         if (notifExists !== -1) {
           let newNotifs = notifications;
           newNotifs[notifExists].count += 1;
-            newNotifs[notifExists].createdAt = Date.now()
+          newNotifs[notifExists].createdAt = Date.now();
           setNotifications([...newNotifs]);
-
-
-        
         } else {
           setNotifications([data, ...notifications]);
-
         }
       } else {
         return;
@@ -118,7 +114,13 @@ const Room = ({ showProfile, setShowProfile }) => {
 
                 {typingStatus && selectedChat._id === typingId ? (
                   <p className="room-status">{typingStatus}</p>
-                ):onlineUsers.includes(getChatDetails(currentUser,selectedChat.users)._id)?<p className="room-status online">online</p>:<p className="room-status offline">offline</p>}
+                ) : onlineUsers.includes(
+                    getChatDetails(currentUser, selectedChat.users)._id
+                  ) ? (
+                  <p className="room-status online">online</p>
+                ) : (
+                  <p className="room-status offline">offline</p>
+                )}
               </div>
             </div>
             <button onClick={() => setShowProfile(!showProfile)}>
@@ -145,7 +147,9 @@ const Room = ({ showProfile, setShowProfile }) => {
                           .username}
                   </div>
                   <div className="message">
-                    <p className="messsage-content"><Linkify>{msg.message}</Linkify></p>
+                    <p className="messsage-content">
+                      <Linkify>{msg.message}</Linkify>
+                    </p>
                   </div>
                   <span className="time-stamp">{format(msg.createdAt)}</span>
                 </div>
@@ -248,13 +252,13 @@ const Container = styled.div`
       .room-name {
         color: #6c37f3;
       }
-        .room-status {
-          font-size: 13px;
-          &.online {
-            color: #37f385;
-          }
-          &.offline {
-            color: #494949;
+      .room-status {
+        font-size: 13px;
+        &.online {
+          color: #37f385;
+        }
+        &.offline {
+          color: #494949;
         }
       }
     }
@@ -289,17 +293,18 @@ const Container = styled.div`
     .message-container {
       width: max-content;
       max-width: 60%;
-      a{
+      a {
         font-weight: 600;
       }
+
       &.sender {
         align-self: flex-end;
         .message {
           background: #6c37f3;
           color: #ffffff;
           border-radius: 30px 30px 0 30px;
-          a{
-            color:#ff7070;
+          a {
+            color: #ff7070;
           }
         }
       }
@@ -312,10 +317,11 @@ const Container = styled.div`
       .message {
         background: #ececec;
         padding: 10px 20px;
-        display: flex;
+
         border-radius: 30px 30px 30px 0;
-        gap: 3rem;
-       
+        .message-content {
+          text-overflow: ellipsis;
+        }
       }
       .time-stamp {
         font-size: 14px;
