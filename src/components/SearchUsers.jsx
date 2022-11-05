@@ -1,7 +1,6 @@
 import axios from "axios";
 import React, { useEffect, useRef, useState } from "react";
 import styled from "styled-components";
-import user from "../assets/kibet.png";
 import { createChatRoute, getUsersRoute } from "../api";
 import { ChatAppState } from "../AppContext/AppProvider";
 

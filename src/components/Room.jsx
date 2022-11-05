@@ -295,6 +295,8 @@ const Container = styled.div`
       max-width: 60%;
       a {
         font-weight: 600;
+        overflow-wrap: break-word;
+        word-wrap: break-word;
       }
 
       &.sender {

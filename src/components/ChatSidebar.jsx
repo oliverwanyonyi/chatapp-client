@@ -32,6 +32,8 @@ const ChatSidebar = () => {
     setChats,
     onlineUsers,
     setOnlineUsers,
+    setMessage,
+    setShowMessage,
   } = ChatAppState();
   const clearReadNotif = async (chatId, userId) => {
     try {
@@ -97,7 +99,15 @@ const ChatSidebar = () => {
   function handleLogout() {
     localStorage.removeItem("talktoo-user");
     navigate("/login");
-    window.location.reload();
+    setShowMessage(true);
+    setMessage({
+      type: "success",
+      title: "Logout Succesful",
+      text: "logout was successful",
+    });
+    setTimeout(() => {
+      window.location.reload();
+    }, 2500);
   }
 
   const handleClickNotif = (notif) => {

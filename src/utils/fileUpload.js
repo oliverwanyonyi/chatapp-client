@@ -1,4 +1,6 @@
-export const handleFileUpload = async(e,setLoadingUpload,setAvatarPreview,setAvatar)=>{
+
+
+export const handleFileUpload = async(e,setLoadingUpload,setAvatarPreview,setAvatar,setMessage,setShowMessage)=>{
     const file = e.target.files[0];
 
     if (
@@ -23,12 +25,25 @@ export const handleFileUpload = async(e,setLoadingUpload,setAvatarPreview,setAva
         const data = await res.json();   
         
         setAvatar(data.url)
+        setShowMessage(true)
+        setMessage({type:"success",title:"Upload Successful",text:"file uploaded successfully"});
+        setTimeout(()=>{
+          setShowMessage(false)
+        },5000)
         setLoadingUpload(false);
       } catch (error) {
         setLoadingUpload(false);
-        console.log(error.message);
+        setShowMessage(true)
+        setMessage({type:"error",title:"Upload Error",text:"network error failed to upload image"});
+        setTimeout(()=>{
+          setShowMessage(false)
+        },5000)
       }
     } else {
-      alert("Ther file you are trying to upload is not an image");
+      setShowMessage(true)
+      setMessage({type:"error",title:"Upload Error",text:"The file you are trying to upload is not an image"});
+      setTimeout(()=>{
+        setShowMessage(false)
+      },5000)
     }
 }

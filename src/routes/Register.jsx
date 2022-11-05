@@ -4,12 +4,16 @@ import { Link, useNavigate } from "react-router-dom";
 import axios from "axios";
 import { registerRoute } from "../api";
 import { handleFileUpload } from "../utils/fileUpload";
+import { ChatAppState } from "../AppContext/AppProvider";
+import { getErrorMessage } from "../utils/getErrorMessage";
 const Register = () => {
   const [user, setUser] = useState({ username: "", email: "", password: "" });
   const [avatar, setAvatar] = useState();
   const [avatarPreview, setAvatarPreview] = useState();
   const [loadingImageUpload, setLoadingImageUpload] = useState(false);
   const [loading, setLoading] = useState(false);
+  const { setMessage, setShowMessage } = ChatAppState();
+
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -19,41 +23,15 @@ const Register = () => {
   });
 
   const handleUploadFile = (e) => {
-    handleFileUpload(e, setLoadingImageUpload, setAvatarPreview, setAvatar);
+    handleFileUpload(
+      e,
+      setLoadingImageUpload,
+      setAvatarPreview,
+      setAvatar,
+      setMessage,
+      setShowMessage
+    );
   };
-  // const handleUploadFile = async (e) => {
-  //   const file = e.target.files[0];
-
-  //   if (
-  //     file.type === "image/jpeg" ||
-  //     file.type === "image/jpg" ||
-  //     file.type === "image/png" ||
-  //     file.type === "image/webp"
-  //   ) {
-  //     setAvatarPreview(URL.createObjectURL(file));
-  //     let formData = new FormData();
-  //     formData.append("file", file);
-  //     formData.append("upload_preset", "tiktalk-app");
-  //     formData.append("cloud_name", "wanyonyi");
-
-  //     try {
-  //       setLoadingImageUpload(true);
-  //       const res = await fetch("https://api.cloudinary.com/v1_1/wanyonyi/upload", {
-  //         body: formData,
-  //         method: "POST",
-  //       });
-  //       const data = await res.json();
-
-  //       setAvatar(data.url)
-  //       setLoadingImageUpload(false);
-  //     } catch (error) {
-  //       setLoadingImageUpload(false);
-  //       console.log(error.message);
-  //     }
-  //   } else {
-  //     alert("Ther file you are trying to upload is not an image");
-  //   }
-  // };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -68,19 +46,32 @@ const Register = () => {
         newUser = user;
       }
       const { data } = await axios.post(registerRoute, newUser);
-
       setLoading(false);
-      if (data.success) {
-        console.log(data.user);
-        localStorage.setItem("talktoo-user", JSON.stringify(data.user));
+      console.log(data.user);
+      localStorage.setItem("talktoo-user", JSON.stringify(data.user));
+      setShowMessage(true);
+      setMessage({
+        type: "success",
+        title: "Registration Succesful",
+        text: "registration successful redirecting...",
+      });
+      setTimeout(() => {
+        setShowMessage(false);
+        setLoading(false);
         navigate("/");
-      } else {
-        alert(data.message);
-      }
+      }, 2500);
     } catch (error) {
-      console.log(error);
+      setMessage({
+        type: "error",
+        title: "Registration Failed",
+        text: getErrorMessage(error),
+      });
+      setShowMessage(true);
       setLoading(false);
-      console.log(error);
+      setTimeout(() => {
+        setShowMessage(false);
+      }, 5000);
+      setLoading(false);
     }
   };
   const handleChange = (e) => {
@@ -96,13 +87,14 @@ const Register = () => {
               <img src={avatarPreview} alt="" />
             </div>
           )}
-          <label className="upload-btn" htmlFor="avatar">
+          <label className="upload-btn" htmlFor="avatar" >
             upload profile+
           </label>
           <input
             type="file"
             name="avatar"
             style={{ display: "none" }}
+            disabled={avatar?true:false}
             id="avatar"
             onChange={handleUploadFile}
           />

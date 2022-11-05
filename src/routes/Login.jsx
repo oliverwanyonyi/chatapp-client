@@ -1,48 +1,65 @@
-import axios from 'axios'
-import React, { useEffect, useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
-import { loginRoute } from '../api'
-import FormContainer from '../components/FormContainer'
+import axios from "axios";
+import React, { useEffect, useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { loginRoute } from "../api";
+import { ChatAppState } from "../AppContext/AppProvider";
+import FormContainer from "../components/FormContainer";
+import { getErrorMessage } from "../utils/getErrorMessage";
 
 const Login = () => {
-  const [user, setUser] = useState({ emailOrName: "",password:'' });
-  const [loading,setLoading] = useState(false)
-  const navigate = useNavigate()
+  const [user, setUser] = useState({ emailOrName: "", password: "" });
+  const [loading, setLoading] = useState(false);
+  const { setMessage, setShowMessage } = ChatAppState();
+  const navigate = useNavigate();
 
-  const handleSubmit =async (e)=>{
-    e.preventDefault()
+  const handleSubmit = async (e) => {
+    e.preventDefault();
 
-      try {
-        setLoading(true)
-        const {data} = await axios.post(loginRoute, user);
-        setLoading(false)
-        if(data.success){
-          
-               localStorage.setItem('talktoo-user',JSON.stringify(data.user))
-               navigate('/') 
-        }else{
-          alert(data.message)
-        }
-      } catch (error) {
-      setLoading(false)
-      }
+    try {
+      setLoading(true);
+      const { data } = await axios.post(loginRoute, user);
+      localStorage.setItem("talktoo-user", JSON.stringify(data.user));
+      setMessage({
+        type: "success",
+        title: "Login Succesful",
+        text: "Login successful redirecting...",
+      });
+      setShowMessage(true);
 
-}
-const handleChange = (e) =>{
-setUser({...user,[e.target.name]:e.target.value.trim().toLowerCase()})
-}
-useEffect(() => {
-  const user = JSON.parse(localStorage.getItem('talktoo-user'))
-  if(user){
-   navigate('/')
-  }
- },[])
+      setTimeout(() => {
+        setShowMessage(false);
+
+        setLoading(false);
+        navigate("/");
+      }, 2500);
+    } catch (error) {
+      setMessage({
+        type: "error",
+        title: "Login Failed",
+        text: getErrorMessage(error),
+      });
+      setShowMessage(true);
+      setLoading(false);
+      setTimeout(() => {
+        setShowMessage(false);
+      }, 5000);
+    }
+  };
+  const handleChange = (e) => {
+    setUser({ ...user, [e.target.name]: e.target.value.trim().toLowerCase() });
+  };
+  useEffect(() => {
+    const user = JSON.parse(localStorage.getItem("talktoo-user"));
+    if (user) {
+      navigate("/");
+    }
+  }, []);
   return (
     <FormContainer>
-        <form className="form" onSubmit={handleSubmit}>
-                <h3>Login to continue </h3>
-                
-                <div className="form-group">
+      <form className="form" onSubmit={handleSubmit}>
+        <h3>Login to continue </h3>
+
+        <div className="form-group">
           <label htmlFor="emailOrName" className="form-label">
             Email or Username
           </label>
@@ -51,10 +68,11 @@ useEffect(() => {
             name="emailOrName"
             className="form-control"
             id="email"
-            required
-            value={user.email} onChange={handleChange}
+            value={user.email}
+            onChange={handleChange}
           />
         </div>
+
         <div className="form-group">
           <label htmlFor="password" className="form-label">
             Password
@@ -70,11 +88,15 @@ useEffect(() => {
           />
         </div>
 
-                <button type="submit" disabled={loading}>{loading?"Loging you in please wait":"Login"}</button>
-                <span>Don't have an account  <Link to='/register'>Register</Link></span>
-            </form>
+        <button type="submit" disabled={loading}>
+          {loading ? "Loging you in please wait" : "Login"}
+        </button>
+        <span>
+          Don't have an account <Link to="/register">Register</Link>
+        </span>
+      </form>
     </FormContainer>
-  )
-}
+  );
+};
 
-export default Login
+export default Login;

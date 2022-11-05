@@ -1,30 +1,41 @@
 import axios from "axios";
 import React, { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import styled from "styled-components";
 import { profileRoute } from "../api";
 import { ChatAppState } from "../AppContext/AppProvider";
 import { handleFileUpload } from "../utils/fileUpload";
+import { getErrorMessage } from "../utils/getErrorMessage";
 
 const Modal = ({ showModal, setShowModal }) => {
   const [bio, setBio] = useState("");
   const [loading, setLoading] = useState(false);
-  const [loadingImageUpload,setLoadingImageUpload] = useState()
-  const [avatar,setAvatar] = useState();
+  const [loadingImageUpload, setLoadingImageUpload] = useState();
+  const navigate = useNavigate() 
+  const [avatar, setAvatar] = useState();
   const [avatarPreview, setAvatarPreview] = useState();
-  const {currentUser,setCurrentUser} = ChatAppState();
+  const { currentUser, setCurrentUser, setMessage, setShowMessage } =
+    ChatAppState();
   const changeHandler = (e) => {
     setBio(e.target.value);
   };
   useEffect(() => {
     if (currentUser) {
       setBio(currentUser.bio);
-      setAvatarPreview(currentUser.avatar)
+      setAvatarPreview(currentUser.avatar);
     }
   }, [currentUser]);
 
-  const handleUploadFile = (e) =>{
-    handleFileUpload(e,setLoadingImageUpload,setAvatarPreview,setAvatar)
-  }
+  const handleUploadFile = (e) => {
+    handleFileUpload(
+      e,
+      setLoadingImageUpload,
+      setAvatarPreview,
+      setAvatar,
+      setMessage,
+      setShowMessage
+    );
+  };
 
   async function handleSubmit(e) {
     e.preventDefault();
@@ -35,22 +46,48 @@ const Modal = ({ showModal, setShowModal }) => {
           "Content-Type": "application/json",
         },
       };
-      
+
       const { data } = await axios.put(
         `${profileRoute}/${currentUser.id}`,
-       
-        { bio,avatar:avatar },
+
+        { bio, avatar: avatar },
         config
       );
       const user = JSON.parse(localStorage.getItem("talktoo-user"));
       user.bio = data.user.bio;
-      user.avatar = data.user.avatar
+      user.avatar = data.user.avatar;
       localStorage.setItem("talktoo-user", JSON.stringify(user));
-      setCurrentUser({ ...currentUser, bio: data.user.bio, avatar:data.user.avatar });
+      setCurrentUser({
+        ...currentUser,
+        bio: data.user.bio,
+        avatar: data.user.avatar,
+      });
+      setMessage({
+        type: "success",
+        title: "Update Profile Successful",
+        text: "profile update successful",
+      });
+      setShowMessage(true);
+
+      setTimeout(() => {
+        navigate("/");
+        setShowMessage(false);
       setLoading(false);
       setShowModal(false);
+
+      }, 2500);
     } catch (error) {
       setLoading(false);
+      setMessage({
+        type: "error",
+        title: "Profile Update Error",
+        text: getErrorMessage(error),
+      });
+      setShowMessage(true);
+      setLoading(false);
+      setTimeout(() => {
+        setShowMessage(false);
+      }, 5000);
     }
   }
   return (
@@ -92,8 +129,15 @@ const Modal = ({ showModal, setShowModal }) => {
             />
           </div>
 
-          <button className="submit-btn" disabled={loading || loadingImageUpload}>
-            {loading ? "Updating":loadingImageUpload? "Uploading image please wait":"Update profile"}
+          <button
+            className="submit-btn"
+            disabled={loading || loadingImageUpload}
+          >
+            {loading
+              ? "Updating"
+              : loadingImageUpload
+              ? "Uploading image please wait"
+              : "Update profile"}
           </button>
         </form>
       </div>
@@ -107,7 +151,7 @@ const Container = styled.div`
   right: 0;
   width: 100%;
   height: 100%;
-  z-index: 11;
+  z-index: 8;
   visibility: visible;
   opacity: 1;
 
@@ -139,34 +183,33 @@ const Container = styled.div`
     border-radius: 10px;
   }
 
-
   .form-group {
     margin-bottom: 20px;
-    &.upload-group{
-                display: flex;
-                align-items: center;
-                justify-content: space-between;
-                label{
-                    background: #ececec;
-                    color: #6c37f3;
-                    padding: 10px 15px;
-                    border-radius: 10px;
-                    cursor: pointer;
-                }
-            }
-            .avatar{
-                width:7rem;
-                height: 7rem;
-                border-radius: 50%;
-                overflow: hidden;
-                margin-bottom: 10px;
-                border: 3px solid #6c37f3;
-                img{
-                    width:100%;
-                    height: 100%;
-                    object-fit: cover;
-                }
-            }
+    &.upload-group {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      label {
+        background: #ececec;
+        color: #6c37f3;
+        padding: 10px 15px;
+        border-radius: 10px;
+        cursor: pointer;
+      }
+    }
+    .avatar {
+      width: 7rem;
+      height: 7rem;
+      border-radius: 50%;
+      overflow: hidden;
+      margin-bottom: 10px;
+      border: 3px solid #6c37f3;
+      img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+      }
+    }
   }
 
   .form-group label {
@@ -197,7 +240,7 @@ const Container = styled.div`
     font-size: 15px;
     font-weight: 400;
     border-radius: 10px;
-    &:disabled{
+    &:disabled {
       cursor: not-allowed;
       background: #8b64ef;
     }
