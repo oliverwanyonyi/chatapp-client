@@ -6,6 +6,7 @@ import { registerRoute } from "../api";
 import { handleFileUpload } from "../utils/fileUpload";
 import { ChatAppState } from "../AppContext/AppProvider";
 import { getErrorMessage } from "../utils/getErrorMessage";
+import Loader from "../components/Loader";
 const Register = () => {
   const [user, setUser] = useState({ username: "", email: "", password: "" });
   const [avatar, setAvatar] = useState();
@@ -17,10 +18,10 @@ const Register = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    if (localStorage.getItem("talktoo-user")) {
+    if (localStorage.getItem("auth")) {
       navigate("/");
     }
-  });
+  },[]);
 
   const handleUploadFile = (e) => {
     handleFileUpload(
@@ -46,20 +47,20 @@ const Register = () => {
         newUser = user;
       }
       const { data } = await axios.post(registerRoute, newUser);
-      setLoading(false);
-      console.log(data.user);
-      localStorage.setItem("talktoo-user", JSON.stringify(data.user));
-      setShowMessage(true);
+    
+      localStorage.setItem("auth", JSON.stringify(data.user));
       setMessage({
         type: "success",
         title: "Registration Succesful",
         text: "registration successful redirecting...",
       });
+      setShowMessage(true);
+
       setTimeout(() => {
         setShowMessage(false);
         setLoading(false);
-        navigate("/");
-      }, 2500);
+        navigate('/')
+      }, 5000);
     } catch (error) {
       setMessage({
         type: "error",
@@ -146,9 +147,9 @@ const Register = () => {
         <div className="btn-container">
           <button type="submit" disabled={loadingImageUpload || loading}>
             {loadingImageUpload
-              ? "Image uploading please wait"
+              ? <Loader type="sm"/>
               : loading
-              ? "Signing you up"
+              ? <Loader type="sm"/>
               : "Register"}
           </button>
         </div>

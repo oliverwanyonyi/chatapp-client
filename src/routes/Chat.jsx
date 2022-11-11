@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import styled from "styled-components";
 import ChatBody from "../components/ChatBody";
@@ -6,15 +6,18 @@ import ChatSidebar from "../components/ChatSidebar";
 import { ChatAppState } from "../AppContext/AppProvider";
 import axios from "axios";
 import { notifyRoute } from "../api";
+import Modal from "../components/Modal";
 
 const Chat = () => {
   const navigate = useNavigate();
   const { currentUser, setCurrentUser, setNotifications, socket } =
     ChatAppState();
+  const [showModal, setShowModal] = useState(false);
+
+  const [modalChildren, setModalChildren] = useState();
 
   const getNotifs = async () => {
     const { data } = await axios.get(`${notifyRoute}?userId=${currentUser.id}`);
-    console.log(data);
     setNotifications(data);
   };
 
@@ -24,10 +27,10 @@ const Chat = () => {
     }
   }, [currentUser]);
   useEffect(() => {
-    if (!localStorage.getItem("talktoo-user")) {
+    if (!localStorage.getItem("auth")) {
       navigate("/login");
     } else {
-      setCurrentUser(JSON.parse(localStorage.getItem("talktoo-user")));
+      setCurrentUser(JSON.parse(localStorage.getItem("auth")));
     }
   }, []);
 
@@ -38,17 +41,28 @@ const Chat = () => {
         username: currentUser.username,
         avatar: currentUser.avatar,
         bio: currentUser.bio,
-        email: currentUser.email,
         online: true,
-        createdAt: currentUser.createdAt,
       });
     }
   }, [currentUser]);
   return (
     <Container>
-      <ChatSidebar />
-      
-      <ChatBody />
+      <Modal
+        setShowModal={setShowModal}
+        showModal={showModal}
+        type={modalChildren}
+      />
+      <ChatSidebar
+        modalChildren={modalChildren}
+        setModalChildren={setModalChildren}
+        setShowModal={setShowModal}
+        showModal={showModal}
+      />
+
+      <ChatBody
+        setModalChildren={setModalChildren}
+        setShowModal={setShowModal}
+      />
     </Container>
   );
 };

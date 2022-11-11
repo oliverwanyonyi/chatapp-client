@@ -4,6 +4,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { loginRoute } from "../api";
 import { ChatAppState } from "../AppContext/AppProvider";
 import FormContainer from "../components/FormContainer";
+import Loader from "../components/Loader";
 import { getErrorMessage } from "../utils/getErrorMessage";
 
 const Login = () => {
@@ -18,7 +19,7 @@ const Login = () => {
     try {
       setLoading(true);
       const { data } = await axios.post(loginRoute, user);
-      localStorage.setItem("talktoo-user", JSON.stringify(data.user));
+      localStorage.setItem("auth", JSON.stringify(data.user));
       setMessage({
         type: "success",
         title: "Login Succesful",
@@ -28,10 +29,9 @@ const Login = () => {
 
       setTimeout(() => {
         setShowMessage(false);
-
         setLoading(false);
         navigate("/");
-      }, 2500);
+      }, 5000);
     } catch (error) {
       setMessage({
         type: "error",
@@ -49,7 +49,7 @@ const Login = () => {
     setUser({ ...user, [e.target.name]: e.target.value.trim().toLowerCase() });
   };
   useEffect(() => {
-    const user = JSON.parse(localStorage.getItem("talktoo-user"));
+    const user = JSON.parse(localStorage.getItem("auth"));
     if (user) {
       navigate("/");
     }
@@ -89,7 +89,7 @@ const Login = () => {
         </div>
 
         <button type="submit" disabled={loading}>
-          {loading ? "Loging you in please wait" : "Login"}
+          {loading ? <Loader type="sm"/> : "Login"}
         </button>
         <span>
           Don't have an account <Link to="/register">Register</Link>

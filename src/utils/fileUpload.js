@@ -1,7 +1,8 @@
 
 
 export const handleFileUpload = async(e,setLoadingUpload,setAvatarPreview,setAvatar,setMessage,setShowMessage)=>{
-    const file = e.target.files[0];
+  console.log(e)  
+  const file = e.target.files[0];
 
     if (
       file.type === "image/jpeg" ||

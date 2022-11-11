@@ -7,19 +7,17 @@ import { ChatAppState } from "../AppContext/AppProvider";
 const SearchUsers = ({
   showSearch,
   setShowSearch,
-  fetchChats,
-  setFetchChats,
 }) => {
   const [searchResult, setSearchResult] = useState([]);
   const [search, setSearch] = useState("");
-  const { currentUser,setSelectedChat } = ChatAppState();
+  const { currentUser,setSelectedChat,setChats } = ChatAppState();
   const searchInputRef = useRef();
   const getUsers = async () => {
     try {
       const { data } = await axios.get(
         `${getUsersRoute}/${currentUser?.id}?search=${search}`
       );
-      setSearchResult(data);
+      setSearchResult(data.users);
     } catch (error) {
       console.log(error);
     }
@@ -44,7 +42,7 @@ const SearchUsers = ({
           name: res.username,
         }
       );
-      setFetchChats(!fetchChats);
+      setChats(prev=>[data,...prev.filter(chat=>chat._id !== data._id)])
       setSelectedChat(data)
       setShowSearch(!showSearch);
       setSearch("");

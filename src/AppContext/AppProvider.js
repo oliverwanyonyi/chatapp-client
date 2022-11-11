@@ -1,5 +1,4 @@
 import { createContext, useContext, useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
 import io from "socket.io-client";
 import { host } from "../api";
 const AppContext = createContext();
@@ -9,20 +8,20 @@ const AppProvider = ({ children }) => {
   const [currentUser, setCurrentUser] = useState();
   const [chats, setChats] = useState([]);
   const [selectedChat, setSelectedChat] = useState(null);
-  const [typingStatus, setTypingStatus] = useState(null);
-  const [typingId, setTypingId] = useState(null);
+  const [typingStatus, setTypingStatus] = useState([]);
   const [notifications, setNotifications] = useState([]);
   const [fetchChats, setFetchChats] = useState(false);
   const [onlineUsers, setOnlineUsers] = useState([]);
-  const [showMessage,setShowMessage] = useState(false)
-const [message,setMessage] = useState({
-  type:"",
-  title:"",
-  text:""
-})
+  const [showMessage, setShowMessage] = useState(false);
+  const [groupId,setGroupId]  = useState()
+  const [message, setMessage] = useState({
+    type: "",
+    title: "",
+    text: "",
+  });
   useEffect(() => {
-    const user = localStorage.getItem("talktoo-user")
-      ? JSON.parse(localStorage.getItem("talktoo-user"))
+    const user = localStorage.getItem("auth")
+      ? JSON.parse(localStorage.getItem("auth"))
       : null;
     if (user) {
       setCurrentUser(user);
@@ -34,10 +33,8 @@ const [message,setMessage] = useState({
         currentUser,
         setCurrentUser,
         notifications,
-        typingStatus,
         setTypingStatus,
-        typingId,
-        setTypingId,
+        typingStatus,
         selectedChat,
         setSelectedChat,
         setNotifications,
@@ -51,7 +48,9 @@ const [message,setMessage] = useState({
         message,
         setMessage,
         setShowMessage,
-        showMessage
+        showMessage,
+        groupId,
+        setGroupId
       }}
     >
       {children}

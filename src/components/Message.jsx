@@ -6,7 +6,7 @@ const Message = () => {
   return (
     <Container>
       {showMessage && (
-        <div className={`message ${message.type}`}>
+        <div className={`message ${message.type} ${showMessage && "show"}`}>
           <div className="m-wrapper">
             <span
               className={`m-icon fas ${
@@ -33,13 +33,19 @@ const Container = styled.div`
   top: 0;
   width: 100%;
   z-index: 10;
-
   .message {
     width: max-content;
     max-width: 300px;
     margin: 0 auto;
-    background: #1f1c24;
+    background: #23313d;
     padding: 10px 10px;
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(20px);
+    &.show{
+      animation: show 1s 1 ease-in-out;
+      animation-fill-mode: forwards;
+    }
     &.success {
       .m-wrapper {
         .m-icon {
@@ -48,6 +54,11 @@ const Container = styled.div`
         .m-info {
           .m-info-header {
             color: #027c17;
+            text-overflow: ellipsis;
+          -webkit-line-clamp: 1;
+          -webkit-box-orient: vertical;
+          overflow: hidden;
+          display: -webkit-box;
           }
           .m-info-text {
             color: #027c17;
@@ -55,6 +66,30 @@ const Container = styled.div`
         }
         .m-action {
           color: #027c17;
+        }
+      }
+    }
+
+    &.info {
+      .m-wrapper {
+        .m-icon {
+          background: #8b64ef;
+        }
+        .m-info {
+          .m-info-header {
+            color: #6c37f3;;
+            text-overflow: ellipsis;
+          -webkit-line-clamp: 1;
+          -webkit-box-orient: vertical;
+          overflow: hidden;
+          display: -webkit-box;
+          }
+          .m-info-text {
+            color: #8b64ef;
+          }
+        }
+        .m-action {
+          color: #8b64ef;
         }
       }
     }
@@ -88,7 +123,7 @@ const Container = styled.div`
         align-items: center;
         justify-content: center;
         border-radius: 50%;
-        color: #000000;
+        color: #23313d;
       }
       .m-action {
         cursor: pointer;
@@ -104,6 +139,13 @@ const Container = styled.div`
       }
     }
   }
+  @keyframes show{
+    to{
+opacity: 1;
+visibility: visible;
+transform: translateY(0);
+    }
+    }
 `;
 
 export default Message;

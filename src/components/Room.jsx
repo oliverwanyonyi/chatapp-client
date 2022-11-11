@@ -1,32 +1,38 @@
 import axios from "axios";
 import React, { useEffect, useRef, useState } from "react";
 import styled from "styled-components";
-import { messageRoute } from "../api";
+import { leaveGroup, messageRoute } from "../api";
 import { ChatAppState } from "../AppContext/AppProvider";
 import Loader from "./Loader";
 import MessageInput from "./MessageInput";
 import { format } from "timeago.js";
 import { getChatDetails } from "../utils/getChatDetails";
 import Linkify from "react-linkify";
-const Room = ({ showProfile, setShowProfile }) => {
+const Room = ({
+  showProfile,
+  setShowProfile,
+  setModalChildren,
+  setShowModal,
+}) => {
   const [messages, setMessages] = useState([]);
   const [loadingMessages, setLoadingMessages] = useState(false);
-
+  const [showMenu, setShowMenu] = useState(false);
   const lastMessageRef = useRef();
   const {
     notifications,
     setNotifications,
-    setTypingId,
     setTypingStatus,
     typingStatus,
     currentUser,
     selectedChat,
     socket,
     setSelectedChat,
-    typingId,
     onlineUsers,
     fetchChats,
     setFetchChats,
+    setGroupId,
+    setShowMessage,
+    setMessage,
   } = ChatAppState();
 
   useEffect(() => {
@@ -39,6 +45,8 @@ const Room = ({ showProfile, setShowProfile }) => {
         setMessages(data);
         setLoadingMessages(false);
       } catch (error) {
+        console.log(error);
+
         setLoadingMessages(false);
       }
     };
@@ -82,15 +90,40 @@ const Room = ({ showProfile, setShowProfile }) => {
 
   useEffect(() => {
     socket.off("user-typing").on("user-typing", (data) => {
-      setTypingStatus(data.text);
-      setTypingId(data.chatId);
+      setTypingStatus((prev) => [
+        ...prev.filter((p) => p.userId !== data.from),
+        { chatId: data.chatId, text: data.text, userId: data.from },
+      ]);
     });
-    socket.off("stopped-typing").on("stopped-typing", () => {
-      setTypingStatus(null);
-      setTypingId(null);
+    socket.off("stopped-typing").on("stopped-typing", (data) => {
+      setTypingStatus((prev) => prev.filter((sts) => sts.userId !== data.from));
     });
   }, [socket]);
 
+  const handleGroupUpdate = () => {
+    setGroupId(selectedChat._id);
+    setModalChildren("group");
+    setShowModal(true);
+  };
+  const handleLeaveGroup = async () => {
+    const { data } = await axios.put(`${leaveGroup}/${currentUser.id}`, {
+      chatId: selectedChat._id,
+    });
+    if (data.success) {
+      setMessage({
+        type: "info",
+        text: `You left ${selectedChat.name}`,
+      });
+      setShowMessage(true);
+      setTimeout(() => {
+        setShowMessage(false);
+        setShowModal(false);
+      }, 5000);
+    }
+    setSelectedChat((prev) => {
+      return { ...prev, users: prev.users.filter((u) => u._id !== data.left) };
+    });
+  };
   return (
     <Container className={showProfile ? "streched" : ""}>
       {selectedChat ? (
@@ -104,16 +137,45 @@ const Room = ({ showProfile, setShowProfile }) => {
                 <i className="fas fa-chevron-left"></i>
               </button>
               <img
-                src={getChatDetails(currentUser, selectedChat.users).avatar}
+                src={
+                  selectedChat.isGroup
+                    ? selectedChat.groupAvatar
+                    : getChatDetails(currentUser, selectedChat.users).avatar
+                }
                 alt=""
               />
-              <div>
+              <div
+                style={{ cursor: "pointer" }}
+                onClick={() => setShowProfile(true)}
+              >
                 <p className="room-name">
-                  {getChatDetails(currentUser, selectedChat.users).username}
+                  {selectedChat.isGroup
+                    ? selectedChat.name
+                    : getChatDetails(currentUser, selectedChat.users).username}
                 </p>
 
-                {typingStatus && selectedChat._id === typingId ? (
-                  <p className="room-status">{typingStatus}</p>
+                {typingStatus.length > 0 &&
+                selectedChat._id === typingStatus[0].chatId ? (
+                  selectedChat.isGroup ? (
+                    typingStatus.map((s) => (
+                      <p className="room-status" key={s.id}>
+                        {s.text}
+                        {", "}
+                      </p>
+                    ))
+                  ) : (
+                    <p className="room-status">{typingStatus[0].text}</p>
+                  )
+                ) : selectedChat.isGroup ? (
+                  <div className="members">
+                    {" "}
+                    {selectedChat.users.map((u, idx, arr) => (
+                      <span key={u._id} className="group-member">
+                        {u.username}
+                        {idx !== arr.length - 1 && ", "}
+                      </span>
+                    ))}
+                  </div>
                 ) : onlineUsers.includes(
                     getChatDetails(currentUser, selectedChat.users)._id
                   ) ? (
@@ -123,8 +185,53 @@ const Room = ({ showProfile, setShowProfile }) => {
                 )}
               </div>
             </div>
-            <button onClick={() => setShowProfile(!showProfile)}>
-              <i className="fas fa-eye"></i>
+            <button>
+              <span
+                className="fas fa-ellipsis-v"
+                onClick={() => setShowMenu(!showMenu)}
+              ></span>
+
+              {showMenu && (
+                <ul className="menu">
+                  <li
+                    className="menu-item"
+                    onClick={() => {
+                      setShowProfile(true);
+                      setShowMenu(false);
+                    }}
+                  >
+                    {selectedChat.isGroup ? "Group Info" : "Contact info"}
+                  </li>
+                  <li
+                    className="menu-item"
+                    onClick={() => {
+                      setSelectedChat(null);
+                      setShowProfile(false);
+                      setShowMenu(false);
+                    }}
+                  >
+                    Close Chat
+                  </li>
+
+                  {selectedChat.isGroup &&
+                    selectedChat.users
+                      .map((u) => u._id)
+                      .includes(currentUser.id.toString()) && (
+                      <li
+                        className="menu-item"
+                        onClick={
+                          selectedChat.groupAdmin === currentUser.id
+                            ? handleGroupUpdate
+                            : handleLeaveGroup
+                        }
+                      >
+                        {selectedChat.groupAdmin === currentUser.id
+                          ? "Update Group"
+                          : "Exit Group"}
+                      </li>
+                    )}
+                </ul>
+              )}
             </button>
           </div>
           <div className="room-body">
@@ -143,6 +250,9 @@ const Room = ({ showProfile, setShowProfile }) => {
                   <div className="message-sender">
                     {msg.fromSelf
                       ? "You "
+                      : selectedChat.isGroup
+                      ? selectedChat?.users.find((u) => u._id === msg.sender)
+                          .username
                       : getChatDetails(currentUser, selectedChat.users)
                           .username}
                   </div>
@@ -186,7 +296,7 @@ const Container = styled.div`
   transition: 200ms width ease-in-out;
   /* display:none; */
   &.streched {
-    width: 70%;
+    width: 60%;
     @media (max-width: 768px) {
       display: none;
     }
@@ -252,6 +362,16 @@ const Container = styled.div`
       .room-name {
         color: #6c37f3;
       }
+      .group-member {
+        font-size: 12px;
+      }
+      .members {
+        text-overflow: ellipsis;
+        -webkit-line-clamp: 1;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+        display: -webkit-box;
+      }
       .room-status {
         font-size: 13px;
         &.online {
@@ -263,15 +383,45 @@ const Container = styled.div`
       }
     }
     button {
-      background: #6c37f3;
-      color: #ffffff;
-      cursor: pointer;
-      padding: 8px 16px;
-      border-radius: 5px;
-      font-size: 14px;
-      transition: 500ms ease-in-out;
-      &:hover {
-        background: #8b64ef;
+      background: none;
+      position: relative;
+      .fa-ellipsis-v {
+        color: #6c37f3;
+        cursor: pointer;
+        height: 40px;
+        width: 40px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 50%;
+        background: none;
+        transition: 250ms ease-in-out;
+        &:hover {
+          background: #ececec;
+        }
+      }
+      .menu {
+        position: absolute;
+        top: 40px;
+        left: -60%;
+        transform: translateX(-60%);
+        width: 200px;
+        background: #ffffff;
+        list-style: none;
+        text-align: left;
+        padding: 10px 20px;
+        border-radius: 5px;
+        box-shadow: 3px 5px 10px rgba(0, 0, 0, 0.15);
+        .menu-item {
+          cursor: pointer;
+          color: #404040;
+          font-size: 14px;
+          padding: 10px 0;
+
+          &:hover {
+            color: #8b64ef;
+          }
+        }
       }
     }
   }
@@ -305,6 +455,7 @@ const Container = styled.div`
           background: #6c37f3;
           color: #ffffff;
           border-radius: 30px 30px 0 30px;
+
           a {
             color: #ff7070;
           }
@@ -321,9 +472,6 @@ const Container = styled.div`
         padding: 10px 20px;
 
         border-radius: 30px 30px 30px 0;
-        .message-content {
-          text-overflow: ellipsis;
-        }
       }
       .time-stamp {
         font-size: 14px;

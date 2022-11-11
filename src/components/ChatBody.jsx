@@ -4,12 +4,12 @@ import { ChatAppState } from "../AppContext/AppProvider";
 import Profile from "./Profile";
 import Room from "./Room";
 
-const ChatBody = () => {
+const ChatBody = ({setModalChildren,setShowModal}) => {
   const [showProfile, setShowProfile] = useState(false);
   const { selectedChat } = ChatAppState();
   return (
     <Container className={selectedChat ? "visible" : ""}>
-      <Room setShowProfile={setShowProfile} showProfile={showProfile} />
+      <Room setShowProfile={setShowProfile} setShowModal={setShowModal} setModalChildren={setModalChildren} showProfile={showProfile} />
       <Profile showProfile={showProfile} setShowProfile={setShowProfile} />
     </Container>
   );

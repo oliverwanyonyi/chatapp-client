@@ -13,32 +13,41 @@ const MessageInput = ({
   socket,
 }) => {
   const [message, setMessage] = useState("");
-  const {fetchChats,setFetchChats,onlineUsers} = ChatAppState()
+  const { fetchChats, setFetchChats } = ChatAppState();
   const focusRef = useRef();
 
   function stoppedTyping() {
-    socket.emit("typing-stopped", { to: getChatDetails(currentUser,selectedChat?.users)._id,chatId:selectedChat?._id });
+    socket.emit("typing-stopped", {
+      to: selectedChat.isGroup
+        ? selectedChat.users.map((u) => u._id)
+        : getChatDetails(currentUser, selectedChat?.users)._id,
+      chatId: selectedChat?._id,
+      from: currentUser.id,
+      groupTyping: selectedChat.isGroup ? true : false,
+    });
   }
 
-  const saveNotif  = async (notif)=>{
-    await axios.post(`${notifyRoute}`,{notif})
-  }
+  const saveNotif = async (notif) => {
+    await axios.post(`${notifyRoute}`, { notif });
+  };
 
   const submitHandler = async (e) => {
     e.preventDefault();
     if (message.length > 0) {
-     const {data} =  await axios.post(`${messageRoute}/send`, {
+      const { data } = await axios.post(`${messageRoute}/send`, {
         message,
         from: currentUser.id,
-        chatId:selectedChat?._id
+        chatId: selectedChat?._id,
       });
-     saveNotif({
-      chatId:selectedChat._id,
-      text: `new unread message from ${currentUser.username}`,
-      count: 1,
-      to:getChatDetails(currentUser,selectedChat?.users)._id,
-    })  
-      
+      saveNotif({
+        chatId: selectedChat._id,
+        text: `new unread message from ${currentUser.username}`,
+        count: 1,
+        to: selectedChat.isGroup
+          ? selectedChat.users.filter((u) => u._id !== currentUser.id).map(u=>u._id)
+          : [getChatDetails(currentUser, selectedChat?.users)._id],
+      });
+
       setMessages([
         ...messages,
         {
@@ -49,31 +58,40 @@ const MessageInput = ({
         },
       ]);
       setMessage("");
-      setFetchChats(!fetchChats)
+      setFetchChats(!fetchChats);
       socket.emit("message-sent", {
         message,
         fromSelf: true,
-        to: getChatDetails(currentUser,selectedChat.users)._id,
-        from: currentUser.id,
-        chatId:selectedChat._id,
+        to: selectedChat.isGroup
+          ? [...selectedChat.users.map((u) => u._id)]
+          : getChatDetails(currentUser, selectedChat.users)._id,
+        chatId: selectedChat._id,
+        sender: currentUser.id,
         createdAt: data.createdAt,
+        groupMessage: selectedChat.isGroup ? true : false,
       });
 
       stoppedTyping();
-    } 
+    }
   };
   const handleTyping = (e) => {
     if (e.target.keyCode !== 13) {
       socket.emit("typing", {
-        text: `${currentUser.username} is typing. . .`,
+        text: selectedChat.isGroup
+          ? `${currentUser.username} is typing...`
+          : "typing...",
         chatId: selectedChat?._id,
-         to: getChatDetails(currentUser,selectedChat?.users)._id,
+        to: selectedChat.isGroup
+          ? selectedChat.users.map((u) => u._id)
+          : getChatDetails(currentUser, selectedChat?.users)._id,
+        groupTyping: selectedChat.isGroup ? true : false,
+        from: currentUser.id,
       });
     }
   };
   useEffect(() => {
     focusRef.current?.focus();
-  },[]);
+  }, []);
   return (
     <Container>
       <form onSubmit={submitHandler}>
@@ -82,7 +100,7 @@ const MessageInput = ({
           onChange={(e) => setMessage(e.target.value)}
           value={message}
           onKeyDown={handleTyping}
-         onBlur={()=>stoppedTyping()}
+          onBlur={() => stoppedTyping()}
           ref={focusRef}
           placeholder="Write Something"
         />

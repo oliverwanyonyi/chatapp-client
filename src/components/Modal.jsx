@@ -1,145 +1,41 @@
-import axios from "axios";
-import React, { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useState } from "react";
 import styled from "styled-components";
-import { profileRoute } from "../api";
-import { ChatAppState } from "../AppContext/AppProvider";
-import { handleFileUpload } from "../utils/fileUpload";
-import { getErrorMessage } from "../utils/getErrorMessage";
+import Group from "./Group";
+import ProfileDetails from "./ProfileDetails";
 
-const Modal = ({ showModal, setShowModal }) => {
-  const [bio, setBio] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [loadingImageUpload, setLoadingImageUpload] = useState();
-  const navigate = useNavigate() 
-  const [avatar, setAvatar] = useState();
-  const [avatarPreview, setAvatarPreview] = useState();
-  const { currentUser, setCurrentUser, setMessage, setShowMessage } =
-    ChatAppState();
-  const changeHandler = (e) => {
-    setBio(e.target.value);
-  };
-  useEffect(() => {
-    if (currentUser) {
-      setBio(currentUser.bio);
-      setAvatarPreview(currentUser.avatar);
+const Modal = ({ showModal, setShowModal, type, groupId, setGroupId }) => {
+  const [selectedUsers, setSelectedUsers] = useState([]);
+  const handleClick = () => {
+    setShowModal(!showModal);
+    if (groupId) {
+      setGroupId(null);
+      setSelectedUsers([]);
     }
-  }, [currentUser]);
-
-  const handleUploadFile = (e) => {
-    handleFileUpload(
-      e,
-      setLoadingImageUpload,
-      setAvatarPreview,
-      setAvatar,
-      setMessage,
-      setShowMessage
-    );
   };
-
-  async function handleSubmit(e) {
-    e.preventDefault();
-    try {
-      setLoading(true);
-      const config = {
-        headers: {
-          "Content-Type": "application/json",
-        },
-      };
-
-      const { data } = await axios.put(
-        `${profileRoute}/${currentUser.id}`,
-
-        { bio, avatar: avatar },
-        config
-      );
-      const user = JSON.parse(localStorage.getItem("talktoo-user"));
-      user.bio = data.user.bio;
-      user.avatar = data.user.avatar;
-      localStorage.setItem("talktoo-user", JSON.stringify(user));
-      setCurrentUser({
-        ...currentUser,
-        bio: data.user.bio,
-        avatar: data.user.avatar,
-      });
-      setMessage({
-        type: "success",
-        title: "Update Profile Successful",
-        text: "profile update successful",
-      });
-      setShowMessage(true);
-
-      setTimeout(() => {
-        navigate("/");
-        setShowMessage(false);
-      setLoading(false);
-      setShowModal(false);
-
-      }, 2500);
-    } catch (error) {
-      setLoading(false);
-      setMessage({
-        type: "error",
-        title: "Profile Update Error",
-        text: getErrorMessage(error),
-      });
-      setShowMessage(true);
-      setLoading(false);
-      setTimeout(() => {
-        setShowMessage(false);
-      }, 5000);
-    }
-  }
   return (
-    <Container>
+    <Container className={showModal && "modal-active"}>
       <div
-        className="profile_edit__modal-overlay"
-        onClick={() => setShowModal(!showModal)}
+        className={`profile_edit__modal-overlay ${
+          showModal && "overlay-active"
+        }`}
+        onClick={handleClick}
       ></div>
-      <div className="profile_edit__modal-container">
-        <form className="form" onSubmit={handleSubmit}>
-          <div className="form-group upload-group">
-            {avatarPreview && (
-              <div className="avatar">
-                <img src={avatarPreview} alt="" />
-              </div>
-            )}
-            <label className="upload-btn" htmlFor="avatar">
-              update profile image+
-            </label>
-            <input
-              type="file"
-              name="avatar"
-              style={{ display: "none" }}
-              id="avatar"
-              onChange={handleUploadFile}
-            />
-          </div>
-
-          <div className="form-group">
-            <label htmlFor="bio">About</label>
-            <input
-              type="text"
-              id="bio"
-              name="bio"
-              placeholder="Hi there iam using tiktalk!"
-              className="form-control"
-              value={bio}
-              onChange={changeHandler}
-            />
-          </div>
-
-          <button
-            className="submit-btn"
-            disabled={loading || loadingImageUpload}
-          >
-            {loading
-              ? "Updating"
-              : loadingImageUpload
-              ? "Uploading image please wait"
-              : "Update profile"}
-          </button>
-        </form>
+      <div className={`form-container ${showModal && "active"}`}>
+        {type === "profile" ? (
+          <ProfileDetails
+            showModal={showModal}
+            setShowModal={setShowModal}
+            handleClick={handleClick}
+          />
+        ) : (
+          <Group
+            setShowModal={setShowModal}
+            selectedUsers={selectedUsers}
+            setSelectedUsers={setSelectedUsers}
+            showModal={showModal}
+            handleClick={handleClick}
+          />
+        )}
       </div>
     </Container>
   );
@@ -151,10 +47,14 @@ const Container = styled.div`
   right: 0;
   width: 100%;
   height: 100%;
-  z-index: 8;
-  visibility: visible;
-  opacity: 1;
+  z-index: 6;
+  visibility: hidden;
+  opacity: 0;
 
+  &.modal-active {
+    opacity: 1;
+    visibility: visible;
+  }
   .profile_edit__modal-overlay {
     background: rgba(0, 0, 0, 0.3);
     backdrop-filter: blur(20px);
@@ -166,23 +66,126 @@ const Container = styled.div`
     height: 100%;
     cursor: pointer;
     z-index: 3;
-  }
-  .profile_edit__modal-container {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    background: #ffffff;
-    padding: 20px 15px;
-    height: min-content;
-    width: 40vw;
-    @media (max-width: 768px) {
-      width: 85vw;
+    visibility: hidden;
+    opacity: 0;
+    transition: 0.2s;
+    &.overlay-active {
+      opacity: 1;
+      visibility: visible;
     }
-    z-index: 6;
-    border-radius: 10px;
   }
 
+  .form-container {
+    position: absolute;
+    top: 0;
+    left: 0;
+    background: #ffffff;
+    padding: 20px 15px;
+    height: 100%;
+    width: 35vw;
+    transform: translateX(-100%);
+    transition: 0.4s;
+    z-index: 60;
+    border-radius: 10px;
+    transition-delay: 0.2s ease-in-out;
+    opacity: 0;
+    visibility: hidden;
+    max-height: 100vh;
+  overflow-y: auto;
+  &::-webkit-scrollbar {
+    width: 0.3rem;
+    &-thumb {
+      background: #8b64ef;
+      border-radius: 0.5rem;
+    }
+  }
+    &.active {
+      transform: translateX(0);
+      visibility: visible;
+      opacity: 1;
+    }
+    .header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      .title {
+        font-size: 14px;
+        color: #6c37f3;
+      }
+      margin-bottom: 20px;
+
+      .fa-times {
+        font-size: 20px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        color: #8b64ef;
+        justify-content: center;
+        width: 40px;
+        height: 40px;
+        border-radius: 10px;
+        background: none;
+        transition: 0.7s;
+        &:hover {
+          background: #ececec;
+        }
+      }
+    }
+    @media (max-width: 1080px) {
+      width: 85vw;
+    }
+    @media (max-width: 768px) {
+      width: 100%;
+    }
+   
+  }
+  .upload-zone {
+    display: flex;
+    justify-content: center;
+    padding: 20px 0;
+    align-items: center;
+    gap: 1rem;
+    width: 100%;
+    .upload-preview {
+      width: 180px;
+      height: 180px;
+      object-fit: cover;
+      border-radius: 50%;
+      border: 2px solid #ececec;
+      position: relative;
+      overflow: hidden;
+      img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+      }
+     
+      .fa-camera {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        font-size: 20px;
+        cursor: pointer;
+        z-index: 2; 
+        color: #ffffff;
+      }
+      &::before {
+        content: "";
+        position: absolute;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.25);
+      }
+    }
+    .file-upload-icon {
+      i {
+        color: #6c37f3;
+        font-size: 25px;
+        cursor: pointer;
+      }
+    }
+  }
   .form-group {
     margin-bottom: 20px;
     &.upload-group {
