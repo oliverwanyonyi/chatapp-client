@@ -13,7 +13,7 @@ const AppProvider = ({ children }) => {
   const [fetchChats, setFetchChats] = useState(false);
   const [onlineUsers, setOnlineUsers] = useState([]);
   const [showMessage, setShowMessage] = useState(false);
-  const [groupId,setGroupId]  = useState()
+  const [groupId,setGroupId]  = useState();
   const [message, setMessage] = useState({
     type: "",
     title: "",

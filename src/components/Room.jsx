@@ -28,11 +28,10 @@ const Room = ({
     socket,
     setSelectedChat,
     onlineUsers,
-    fetchChats,
-    setFetchChats,
     setGroupId,
     setShowMessage,
     setMessage,
+    setChats,
   } = ChatAppState();
 
   useEffect(() => {
@@ -60,12 +59,23 @@ const Room = ({
       if (selectedChat?._id === data.message.chatId) {
         setMessages([...messages, data.message]);
       }
+      setChats((prev) =>
+        prev.map((chat) =>
+          chat._id === data.message.chatId
+            ? {
+                ...chat,
+                lastMessage: {
+                  text: data.message.message,
+                  updatedAt: data.message.updatedAt,
+                },
+              }
+            : chat
+        )
+      );
     });
   }, [selectedChat?._id, messages]);
   useEffect(() => {
     socket.off("new-notification").on("new-notification", (data) => {
-      setFetchChats(!fetchChats);
-
       if (!selectedChat?._id || selectedChat?._id !== data.chatId) {
         const notifExists = notifications.findIndex(
           (notif) => notif.chatId === data.chatId
@@ -120,9 +130,8 @@ const Room = ({
         setShowModal(false);
       }, 5000);
     }
-    setSelectedChat((prev) => {
-      return { ...prev, users: prev.users.filter((u) => u._id !== data.left) };
-    });
+    setSelectedChat(data);
+    setChats((prev) => prev.map((c) => (c._id === data._id ? data : c)));
   };
   return (
     <Container className={showProfile ? "streched" : ""}>
@@ -130,12 +139,6 @@ const Room = ({
         <>
           <div className="room-header">
             <div className="room-profile">
-              <button
-                className="mobile-show-chats"
-                onClick={() => setSelectedChat(null)}
-              >
-                <i className="fas fa-chevron-left"></i>
-              </button>
               <img
                 src={
                   selectedChat.isGroup
@@ -157,10 +160,10 @@ const Room = ({
                 {typingStatus.length > 0 &&
                 selectedChat._id === typingStatus[0].chatId ? (
                   selectedChat.isGroup ? (
-                    typingStatus.map((s) => (
+                    typingStatus.map((s, idx, arr) => (
                       <p className="room-status" key={s.id}>
                         {s.text}
-                        {", "}
+                        {idx !== arr.length - 1 && ", "}
                       </p>
                     ))
                   ) : (
@@ -216,7 +219,7 @@ const Room = ({
                   {selectedChat.isGroup &&
                     selectedChat.users
                       .map((u) => u._id)
-                      .includes(currentUser.id.toString()) && (
+                      .includes(currentUser.id) && (
                       <li
                         className="menu-item"
                         onClick={
@@ -235,49 +238,53 @@ const Room = ({
             </button>
           </div>
           <div className="room-body">
-            {loadingMessages ? (
-              <Loader />
-            ) : messages.length > 0 ? (
-              messages.map((msg, idx) => (
-                <div
-                  className={
-                    msg.fromSelf
-                      ? "message-container sender"
-                      : "message-container"
-                  }
-                  key={idx}
-                >
-                  <div className="message-sender">
-                    {msg.fromSelf
-                      ? "You "
-                      : selectedChat.isGroup
-                      ? selectedChat?.users.find((u) => u._id === msg.sender)
-                          .username
-                      : getChatDetails(currentUser, selectedChat.users)
-                          .username}
+            <div className="room-messages-container">
+              {loadingMessages ? (
+                <Loader />
+              ) : messages.length > 0 ? (
+                messages.map((msg, idx) => (
+                  <div
+                    className={
+                      msg.fromSelf
+                        ? "message-container sender"
+                        : "message-container"
+                    }
+                    key={idx}
+                  >
+                    <div className="message-sender">
+                      {msg.fromSelf
+                        ? <></>
+                        : selectedChat.isGroup
+                        ? selectedChat?.users.find((u) => u._id === msg.sender)
+                            ?.username || "Unknown sender left"
+                        : getChatDetails(currentUser, selectedChat.users)
+                            .username}
+                    </div>
+                    <div className="message">
+                      <p className="message-content">
+                        <Linkify>{msg.message}</Linkify>
+                      </p>
+                    </div>
+                    <span className="time-stamp">{format(msg.updatedAt)}</span>
                   </div>
-                  <div className="message">
-                    <p className="messsage-content">
-                      <Linkify>{msg.message}</Linkify>
-                    </p>
-                  </div>
-                  <span className="time-stamp">{format(msg.createdAt)}</span>
+                ))
+              ) : (
+                <div className="no-msgs">
+                  <p>No messages yet!</p>
                 </div>
-              ))
-            ) : (
-              <div className="welcome">
-                <p>No messages yet!</p>
-              </div>
-            )}
-            <div ref={lastMessageRef} />
+              )}
+              <div ref={lastMessageRef} />
+            </div>
+            <MessageInput
+              selectedChat={selectedChat}
+              setSelectedChat={setSelectedChat}
+              setChats={setChats}
+              currentUser={currentUser}
+              setMessages={setMessages}
+              messages={messages}
+              socket={socket}
+            />
           </div>
-          <MessageInput
-            selectedChat={selectedChat}
-            currentUser={currentUser}
-            setMessages={setMessages}
-            messages={messages}
-            socket={socket}
-          />
         </>
       ) : (
         <div className="welcome">
@@ -292,14 +299,21 @@ const Room = ({
 };
 const Container = styled.div`
   width: 100%;
-  min-height: 100vh;
+  max-height: 100vh;
   transition: 200ms width ease-in-out;
-  /* display:none; */
+  
   &.streched {
     width: 60%;
     @media (max-width: 768px) {
       display: none;
     }
+  }
+  .no-msgs{
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    height: 100%;
   }
 
   display: flex;
@@ -321,7 +335,6 @@ const Container = styled.div`
     }
   }
   flex-direction: column;
-  padding: 10px 20px;
   .room-header {
     display: flex;
     align-items: center;
@@ -374,6 +387,9 @@ const Container = styled.div`
       }
       .room-status {
         font-size: 13px;
+        display: flex;
+        gap: 1rem;
+        color: #37f385;
         &.online {
           color: #37f385;
         }
@@ -426,20 +442,29 @@ const Container = styled.div`
     }
   }
   .room-body {
-    height: 80vh;
-    display: flex;
-    flex-direction: column;
-    gap: 1rem;
-    border: 2px solid #ececec;
-    overflow-y: auto;
-    padding: 10px;
-    &::-webkit-scrollbar {
-      width: 0.5rem;
-      &-thumb {
-        background: #8b64ef;
-        border-radius: 0.5rem;
+    height: 90vh;
+    background-image: url("../assets/shapes.png");
+    background-size: cover;
+    background-repeat: no-repeat;
+    background-attachment: fixed;
+    background-position: center;
+    border-radius: 5px 5px 0 0;
+    .room-messages-container {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+      overflow-y: auto;
+      padding: 10px;
+      height: 80vh;
+      &::-webkit-scrollbar {
+        width: 0.5rem;
+        &-thumb {
+          background: #8b64ef;
+          border-radius: 0.5rem;
+        }
       }
     }
+
     .message-container {
       width: max-content;
       max-width: 60%;
@@ -448,7 +473,9 @@ const Container = styled.div`
         overflow-wrap: break-word;
         word-wrap: break-word;
       }
-
+      .message-content {
+        overflow-wrap: break-word;
+      }
       &.sender {
         align-self: flex-end;
         .message {
@@ -462,7 +489,7 @@ const Container = styled.div`
         }
       }
       .message-sender {
-        color: #292929;
+        color: #ebebeb;
         font-weight: 600;
         margin-bottom: 5px;
         font-size: 15px;
@@ -477,7 +504,7 @@ const Container = styled.div`
         font-size: 14px;
         margin-top: 10px;
         display: block;
-        color: #494949;
+        color: #fff;
       }
     }
   }

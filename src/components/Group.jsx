@@ -2,6 +2,7 @@ import axios from "axios";
 import React from "react";
 import { useEffect } from "react";
 import { useState } from "react";
+import { Socket } from "socket.io-client";
 import styled from "styled-components";
 import {
   createGroupRoute,
@@ -16,7 +17,7 @@ import Loader from "./Loader";
 
 const Group = ({
   setShowModal,
-
+groupName,setGroupName,
   handleClick,
   selectedUsers,
   setSelectedUsers,
@@ -30,15 +31,15 @@ const Group = ({
     setShowMessage,
     groupId,
     setGroupId,
+
     selectedChat,
+    socket,
   } = ChatAppState();
   const [loadingUsers, setLoadingUsers] = useState(false);
   const [loading, setLoading] = useState(false);
-
   const [avatar, setAvatar] = useState();
   const [avatarPreview, setAvatarPreview] = useState();
   const [loadingAvatarUpload, setLoadingAvatarUpload] = useState(false);
-  const [groupName, setGroupName] = useState("");
   const [search, setSearch] = useState("");
   const getUsers = async () => {
     try {
@@ -53,7 +54,10 @@ const Group = ({
     }
   };
   const handleSelect = (selected) => {
-    setSelectedUsers([...selectedUsers.filter(u=>u._id!==selected._id), selected]);
+    setSelectedUsers([
+      ...selectedUsers.filter((u) => u._id !== selected._id),
+      selected,
+    ]);
     setUsers(users.filter((u) => u._id !== selected._id));
     if (users.length === 1) {
       setSearch("");
@@ -71,6 +75,12 @@ const Group = ({
           }
         );
         setSelectedChat(data);
+        setChats((prev) => prev.map((c) => (c._id === data._id ? data : c)));
+        socket.emit("user-removed", {
+          users: selectedUsers.map((u) => u._id),
+          chat: data,
+          admin: currentUser.username,
+        });
         setSelectedUsers(data.users.filter((u) => u._id !== currentUser.id));
       } else {
         setUsers([...users, remove]);
@@ -117,6 +127,7 @@ const Group = ({
         setChats((prev) =>
           prev.map((chat) => (chat._id === data._id ? data : chat))
         );
+
         setSelectedChat(data);
         setGroupId(null);
         setLoading(false);
@@ -155,6 +166,10 @@ const Group = ({
           data,
           ...prev.filter((chat) => chat._id !== data._id),
         ]);
+        socket.emit("group-created", {
+          chat: { ...data, members: selectedUsers.map((u) => u._id) },
+          adminName: currentUser.username,
+        });
         setUsers([]);
         setGroupName("");
         setSelectedUsers([]);
@@ -217,21 +232,19 @@ const Group = ({
           <span className="fas fa-times" onClick={handleClick}></span>
         </div>
         <div className="upload-zone">
-         
-            <div className="upload-preview" title="upload profile image here">
-              <label htmlFor="file" className="file-upload-icon">
-                  <i className="fas fa-camera"></i>
-                </label>
-                <input
-                  type="file"
-                  name=""
-                  id="file"
-                  onChange={handleUploadFile}
-                  style={{ display: "none" }}
-                />
-             {avatarPreview && <img src={avatarPreview} alt="" className="" />}
-            </div>
-          
+          <div className="upload-preview" title="upload profile image here">
+            <label htmlFor="file" className="file-upload-icon">
+              <i className="fas fa-camera"></i>
+            </label>
+            <input
+              type="file"
+              name=""
+              id="file"
+              onChange={handleUploadFile}
+              style={{ display: "none" }}
+            />
+            {avatarPreview && <img src={avatarPreview} alt="" className="" />}
+          </div>
         </div>
         <div className="all-users">
           <div className="search-box">
@@ -320,7 +333,7 @@ const Container = styled.div`
       border-radius: 0.5rem;
     }
   }
-  
+
   .all-users {
     .search-box {
       position: relative;

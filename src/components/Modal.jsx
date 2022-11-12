@@ -1,14 +1,18 @@
 import { useState } from "react";
 import styled from "styled-components";
+import { ChatAppState } from "../AppContext/AppProvider";
 import Group from "./Group";
 import ProfileDetails from "./ProfileDetails";
 
-const Modal = ({ showModal, setShowModal, type, groupId, setGroupId }) => {
+const Modal = ({ showModal, setShowModal, type }) => {
   const [selectedUsers, setSelectedUsers] = useState([]);
+  const [groupName,setGroupName] = useState('')
+  const { groupId, setGroupId } = ChatAppState();
   const handleClick = () => {
     setShowModal(!showModal);
     if (groupId) {
       setGroupId(null);
+      setGroupName('')
       setSelectedUsers([]);
     }
   };
@@ -34,6 +38,8 @@ const Modal = ({ showModal, setShowModal, type, groupId, setGroupId }) => {
             setSelectedUsers={setSelectedUsers}
             showModal={showModal}
             handleClick={handleClick}
+            groupName={groupName}
+            setGroupName={setGroupName}
           />
         )}
       </div>
@@ -91,14 +97,14 @@ const Container = styled.div`
     opacity: 0;
     visibility: hidden;
     max-height: 100vh;
-  overflow-y: auto;
-  &::-webkit-scrollbar {
-    width: 0.3rem;
-    &-thumb {
-      background: #8b64ef;
-      border-radius: 0.5rem;
+    overflow-y: auto;
+    &::-webkit-scrollbar {
+      width: 0.3rem;
+      &-thumb {
+        background: #8b64ef;
+        border-radius: 0.5rem;
+      }
     }
-  }
     &.active {
       transform: translateX(0);
       visibility: visible;
@@ -137,7 +143,6 @@ const Container = styled.div`
     @media (max-width: 768px) {
       width: 100%;
     }
-   
   }
   .upload-zone {
     display: flex;
@@ -159,7 +164,7 @@ const Container = styled.div`
         height: 100%;
         object-fit: cover;
       }
-     
+
       .fa-camera {
         position: absolute;
         top: 50%;
@@ -167,7 +172,7 @@ const Container = styled.div`
         transform: translate(-50%, -50%);
         font-size: 20px;
         cursor: pointer;
-        z-index: 2; 
+        z-index: 2;
         color: #ffffff;
       }
       &::before {

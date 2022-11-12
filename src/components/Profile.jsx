@@ -55,7 +55,7 @@ const Profile = ({ showProfile, setShowProfile }) => {
                       )._id === currentUser.id
                         ? "You"
                         : selectedChat?.users.find(
-                            (u) => u._id.toString() === selectedChat?.groupAdmin
+                            (u) => u._id === selectedChat?.groupAdmin
                           ).username
                     } ${moment(selectedChat?.createdAt).fromNow()}`
                   : getChatDetails(currentUser, selectedChat?.users).bio}

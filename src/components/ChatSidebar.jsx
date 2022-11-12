@@ -7,17 +7,19 @@ import { getChatsRoute, notifyRoute } from "../api";
 import { ChatAppState } from "../AppContext/AppProvider";
 import { getChatDetails } from "../utils/getChatDetails";
 import Loader from "./Loader";
-import Modal from "./Modal";
 import SearchUsers from "./SearchUsers";
 import { format } from "timeago.js";
-const ChatSidebar = ({modalChildren, setModalChildren,showModal, setShowModal}) => {
- 
+const ChatSidebar = ({
+  setModalChildren,
+  showModal,
+  setShowModal,
+}) => {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   const [showNotif, setShowNotif] = useState(false);
   const [showSearch, setShowSearch] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
-  
+
   const {
     selectedChat,
     setSelectedChat,
@@ -42,11 +44,7 @@ const ChatSidebar = ({modalChildren, setModalChildren,showModal, setShowModal}) 
           "Content-Type": "application/json",
         },
       };
-      await axios.put(
-        `${notifyRoute}/`,
-        { chatId, userId },
-        config
-      );
+      await axios.put(`${notifyRoute}/`, { chatId, userId }, config);
     } catch (error) {
       console.log(error);
     }
@@ -94,6 +92,20 @@ const ChatSidebar = ({modalChildren, setModalChildren,showModal, setShowModal}) 
     }
   }, [currentUser, fetchChats]);
 
+  useEffect(() => {
+    socket.on("new-group", (data) => {
+      setChats((prev) => [
+        data.chat,
+        ...prev.filter((c) => c._id !== data.chat._id),
+      ]);
+      setMessage({ type:"info", text: `${data.adminName} added you to ${data.chat.name}` });
+      setShowMessage(true);
+      setTimeout(() => {
+        setShowMessage(false);
+      }, 2500);
+    });
+  }, [socket,chats]);
+
   function handleLogout() {
     localStorage.removeItem("auth");
     navigate("/login");
@@ -118,9 +130,6 @@ const ChatSidebar = ({modalChildren, setModalChildren,showModal, setShowModal}) 
   };
   return (
     <Container className={selectedChat ? "hidden" : ""}>
-      
-        
-      
       <div className="sidebar-container">
         <div className="user">
           <div className="user-avatar">
@@ -173,13 +182,19 @@ const ChatSidebar = ({modalChildren, setModalChildren,showModal, setShowModal}) 
                   <ul className="menu">
                     <li
                       className="menu-item"
-                      onClick={() => {handleMenuClick("group");setShowMenu(!showMenu)}}
+                      onClick={() => {
+                        handleMenuClick("group");
+                        setShowMenu(!showMenu);
+                      }}
                     >
                       New Group
                     </li>
                     <li
                       className="menu-item"
-                      onClick={() =>{ handleMenuClick("profile");setShowMenu(!showMenu)}}
+                      onClick={() => {
+                        handleMenuClick("profile");
+                        setShowMenu(!showMenu);
+                      }}
                     >
                       Edit Profile
                     </li>
@@ -240,31 +255,30 @@ const ChatSidebar = ({modalChildren, setModalChildren,showModal, setShowModal}) 
                 <div className="contact-info">
                   <div className="contact-info-wrapper">
                     <h2>
-                      {chat.isGroup
-                        ? <span className="chat-name">{chat.name}</span>
-                        : <span className="chat-name">{getChatDetails(currentUser, chat.users)?.username}</span>}
+                      {chat.isGroup ? (
+                        <span className="chat-name">{chat.name}</span>
+                      ) : (
+                        <span className="chat-name">
+                          {getChatDetails(currentUser, chat.users)?.username}
+                        </span>
+                      )}
                       <span className="time-stamp">
-                        {moment(chat.lastMessage.time).fromNow()}
+                        {moment(chat?.lastMessage?.updatedAt || chat.updatedAt).fromNow()}
                       </span>
                     </h2>
                     <p className="last-message">
                       {typingStatus.length > 0 &&
                       typingStatus[0].chatId === chat._id
                         ? chat.isGroup
-                          ? typingStatus.map((s,idx) => (
-                              <span
-                                className="typing-status"
-                                key={idx}
-                              >
+                          ? typingStatus.map((s, idx) => (
+                              <span className="typing-status" key={idx}>
                                 {s.text}
                                 {", "}
                               </span>
                             ))
                           : typingStatus[0].text
-                        : chat.lastMessage.text
-                        ? `${chat.lastMessage.text} 
-                             
-                            `
+                        : chat?.lastMessage?.text
+                        ? `${chat.lastMessage.text} `
                         : "No messages here yet"}
                     </p>
                   </div>
@@ -403,16 +417,16 @@ const Container = styled.div`
           position: absolute;
           top: 30px;
           left: -120px;
-         
+
           width: 200px;
           background: #ffffff;
           list-style: none;
           padding: 10px 20px;
           border-radius: 5px;
           box-shadow: 3px 5px 10px rgba(0, 0, 0, 0.15);
-          @media(max-width:768px){
+          @media (max-width: 768px) {
             left: -200px;
-          } 
+          }
           .menu-item {
             cursor: pointer;
             color: #404040;
@@ -445,6 +459,7 @@ const Container = styled.div`
     flex-direction: column;
     gap: 1rem;
     overflow-y: auto;
+    overflow-x: hidden;
     max-height: 70vh;
     padding-top: 25px;
     &::-webkit-scrollbar {
@@ -460,7 +475,7 @@ const Container = styled.div`
       cursor: pointer;
       padding: 10px;
       border-radius: 10px;
-transition:  500ms;
+      transition: 500ms;
       &.selected {
         background: #ececec;
       }
@@ -504,21 +519,21 @@ transition:  500ms;
         h2 {
           display: flex;
           justify-content: space-between;
-          span.chat-name{
-          color: #6c37f3;
-          margin-bottom: 3px;
-          font-size: 16px;
-          font-weight: 600;
-          margin-bottom: 10px;
-          text-transform: capitalize;
-          display: flex;
-          width: 100%;
-          align-items: flex-start;
-          text-overflow: ellipsis;
-          -webkit-line-clamp: 1;
-          -webkit-box-orient: vertical;
-          overflow: hidden;
-          display: -webkit-box;
+          span.chat-name {
+            color: #6c37f3;
+            margin-bottom: 3px;
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 10px;
+            text-transform: capitalize;
+            display: flex;
+            width: 100%;
+            align-items: flex-start;
+            text-overflow: ellipsis;
+            -webkit-line-clamp: 1;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+            display: -webkit-box;
           }
 
           span.time-stamp {
@@ -531,6 +546,7 @@ transition:  500ms;
         }
         .last-message {
           text-overflow: ellipsis;
+          overflow-wrap: break-word;
           -webkit-line-clamp: 1;
           -webkit-box-orient: vertical;
           overflow: hidden;
