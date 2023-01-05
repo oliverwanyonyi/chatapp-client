@@ -1,5 +1,5 @@
-// const host = "https://talktooapi.herokuapp.com";
-const host = "http://localhost:5000";
+const host = "https://talktooapi.up.railway.app";
+// const host = "http://localhost:5000";
 const registerRoute = `${host}/api/users/register`;
 const loginRoute = `${host}/api/users/login`;
 const profileRoute = `${host}/api/users`;
