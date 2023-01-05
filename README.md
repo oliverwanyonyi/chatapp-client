@@ -25,7 +25,7 @@ React chat app with a ton of features like authentication, creating a chat, send
 
 -  updating profile
 
-![react chat app](assets/PROFILE.png)
+![react chat app](assets/profile.PNG)
 
 -  creating group
 
