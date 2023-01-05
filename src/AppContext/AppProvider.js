@@ -10,7 +10,6 @@ const AppProvider = ({ children }) => {
   const [selectedChat, setSelectedChat] = useState(null);
   const [typingStatus, setTypingStatus] = useState([]);
   const [notifications, setNotifications] = useState([]);
-  const [fetchChats, setFetchChats] = useState(false);
   const [onlineUsers, setOnlineUsers] = useState([]);
   const [showMessage, setShowMessage] = useState(false);
   const [groupId,setGroupId]  = useState();
@@ -39,8 +38,6 @@ const AppProvider = ({ children }) => {
         setSelectedChat,
         setNotifications,
         socket,
-        setFetchChats,
-        fetchChats,
         chats,
         setChats,
         onlineUsers,

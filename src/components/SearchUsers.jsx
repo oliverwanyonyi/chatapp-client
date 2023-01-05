@@ -38,9 +38,7 @@ const SearchUsers = ({
     try {
       const { data } = await axios.post(
         `${createChatRoute}?from=${currentUser?.id}&to=${res._id}`,
-        {
-          name: res.username,
-        }
+       
       );
       setChats(prev=>[data,...prev.filter(chat=>chat._id !== data._id)])
       setSelectedChat(data)

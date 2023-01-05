@@ -28,8 +28,6 @@ const ChatSidebar = ({
     setNotifications,
     typingStatus,
     currentUser,
-    fetchChats,
-    setFetchChats,
     chats,
     setChats,
     onlineUsers,
@@ -90,7 +88,7 @@ const ChatSidebar = ({
     if (currentUser) {
       getChats();
     }
-  }, [currentUser, fetchChats]);
+  }, [currentUser]);
 
   useEffect(() => {
     socket.on("new-group", (data) => {
@@ -219,8 +217,6 @@ const ChatSidebar = ({
         <SearchUsers
           showSearch={showSearch}
           setShowSearch={setShowSearch}
-          fetchChats={fetchChats}
-          setFetchChats={setFetchChats}
         />
 
         <div className="contacts">
@@ -295,6 +291,7 @@ const ChatSidebar = ({
 };
 const Container = styled.div`
   width: 30%;
+  height: 100%;
   padding: 20px 10px;
   /* display:none; */
   position: relative;
@@ -313,12 +310,11 @@ const Container = styled.div`
     display: flex;
     gap: 1rem;
     align-items: center;
-
     width: 100%;
     margin-bottom: 20px;
     .user-avatar {
-      width: 4rem;
-      height: 4rem;
+      width: 3.5rem;
+      height: 3.5rem;
       border-radius: 50%;
       overflow: hidden;
       img {
@@ -344,7 +340,7 @@ const Container = styled.div`
       }
       .actions {
         display: flex;
-        gap: 1rem;
+        gap: 1.5rem;
         align-items: center;
         position: relative;
         .notifications {
@@ -468,7 +464,12 @@ const Container = styled.div`
         background: #8b64ef;
         border-radius: 0.5rem;
       }
+      
+      
     }
+
+   
+    
     .contact {
       display: flex;
       gap: 1rem;

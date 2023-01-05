@@ -265,8 +265,7 @@ groupName,setGroupName,
                   key={user._id}
                   title={`remove ${user.username}`}
                 >
-                  <h2 className="user-name">{user.username}</h2>
-                  <span className="user-name">{user.name}</span>
+                  <img src={user.avatar} title={`${user.username} selected`} alt={user.username} />
                   <span
                     className="fas fa-times"
                     title="Click to remove user"
@@ -352,6 +351,7 @@ const Container = styled.div`
         padding: 10px 20px 10px 40px;
         border-radius: 10px;
         cursor: pointer;
+        transition: 500ms;
         &:focus {
           cursor: text;
         }
@@ -359,20 +359,26 @@ const Container = styled.div`
     }
     .users-to-add {
       display: flex;
-      flex-wrap: wrap;
+      overflow-x: auto;
+      &::-webkit-scrollbar{
+        height:.3rem;
+      
+      }
+      &::-webkit-scrollbar-thumb{
+        background: #6c37f3;
+      }
       gap: 1rem;
       padding: 20px 0;
       .user {
         width: max-content;
         display: flex;
-        background: #6c37f3;
         color: #ffff;
         border-radius: 16px;
         justify-content: space-between;
         padding: 5px 10px;
         img {
-          width: 30px;
-          height: 30px;
+          width: 40px;
+          height: 40px;
           border-radius: 50%;
           object-fit: cover;
           border-radius: 50%;
@@ -381,15 +387,15 @@ const Container = styled.div`
           font-size: 14px;
         }
         span.fa-times {
-          background: #fafafa;
-          color: #6c37f3;
+          background: #6c37f3;
+          color: #ffff;
           font-size: 8px;
           cursor: pointer;
           height: 20px;
           display: flex;
           align-items: center;
           justify-content: center;
-
+align-self: flex-end;
           width: 20px;
           cursor: pointer;
           border-radius: 50%;

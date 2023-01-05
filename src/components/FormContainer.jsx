@@ -19,7 +19,7 @@ const Container = styled.div`
     .form{
         padding: 15px 20px;
         background: #ffffff;
-        border:2px solid #6c37f3;;
+        border:2px solid #6c37f3;
         width:400px;
         border-radius: 10px;
         color:#292929;

@@ -32,6 +32,7 @@ const Room = ({
     setShowMessage,
     setMessage,
     setChats,
+    chats,
   } = ChatAppState();
 
   useEffect(() => {
@@ -59,21 +60,26 @@ const Room = ({
       if (selectedChat?._id === data.message.chatId) {
         setMessages([...messages, data.message]);
       }
-      setChats((prev) =>
-        prev.map((chat) =>
-          chat._id === data.message.chatId
-            ? {
-                ...chat,
-                lastMessage: {
-                  text: data.message.message,
-                  updatedAt: data.message.updatedAt,
-                },
-              }
-            : chat
-        )
+      console.log(data.message);
+      const chatToUpdate = chats.find(
+        (c) => c._id.toString() === data.message.chatId.toString()
       );
+      if (chatToUpdate) {
+        setChats((prev) => [
+          {
+            ...chatToUpdate,
+            lastMessage: {
+              text: data.message.message,
+              updatedAt: data.message.updatedAt,
+            },
+          },
+          ...prev.filter((chat) => chat._id !== data.message.chatId),
+        ]);
+      } else {
+        setChats((prev) => [data.message.chat, ...prev]);
+      }
     });
-  }, [selectedChat?._id, messages]);
+  }, [selectedChat?._id, messages, chats]);
   useEffect(() => {
     socket.off("new-notification").on("new-notification", (data) => {
       if (!selectedChat?._id || selectedChat?._id !== data.chatId) {
@@ -131,6 +137,11 @@ const Room = ({
       }, 5000);
     }
     setSelectedChat(data);
+    socket.emit("someone-left", {
+      chat: data,
+      text: `${currentUser.username} left`,
+      users:selectedChat.users.map(u=>u._id)
+    });
     setChats((prev) => prev.map((c) => (c._id === data._id ? data : c)));
   };
   return (
@@ -238,53 +249,51 @@ const Room = ({
             </button>
           </div>
           <div className="room-body">
-            <div className="room-messages-container">
-              {loadingMessages ? (
-                <Loader />
-              ) : messages.length > 0 ? (
-                messages.map((msg, idx) => (
-                  <div
-                    className={
-                      msg.fromSelf
-                        ? "message-container sender"
-                        : "message-container"
-                    }
-                    key={idx}
-                  >
-                    <div className="message-sender">
-                      {msg.fromSelf
-                        ? <></>
-                        : selectedChat.isGroup
-                        ? selectedChat?.users.find((u) => u._id === msg.sender)
-                            ?.username || "Unknown sender left"
-                        : getChatDetails(currentUser, selectedChat.users)
-                            .username}
-                    </div>
-                    <div className="message">
-                      <p className="message-content">
-                        <Linkify>{msg.message}</Linkify>
-                      </p>
-                    </div>
-                    <span className="time-stamp">{format(msg.updatedAt)}</span>
+            {loadingMessages ? (
+              <Loader />
+            ) : messages.length > 0 ? (
+              messages.map((msg, idx) => (
+                <div
+                  className={
+                    msg.fromSelf
+                      ? "message-container sender"
+                      : "message-container"
+                  }
+                  key={idx}
+                >
+                  <div className="message-sender">
+                    {!msg.fromSelf &&
+                      (selectedChat.isGroup ? (
+                        selectedChat.users.find((u) => u._id === msg.sender)
+                          ?.username || "left"
+                      ) : (
+                        <></>
+                      ))}
                   </div>
-                ))
-              ) : (
-                <div className="no-msgs">
-                  <p>No messages yet!</p>
+                  <div className="message">
+                    <p className="message-content">
+                      <Linkify>{msg.message}</Linkify>
+                    </p>
+                  </div>
+                  <span className="time-stamp">{format(msg.updatedAt)}</span>
                 </div>
-              )}
-              <div ref={lastMessageRef} />
-            </div>
-            <MessageInput
-              selectedChat={selectedChat}
-              setSelectedChat={setSelectedChat}
-              setChats={setChats}
-              currentUser={currentUser}
-              setMessages={setMessages}
-              messages={messages}
-              socket={socket}
-            />
+              ))
+            ) : (
+              <div className="no-msgs">
+                <p>No messages yet!</p>
+              </div>
+            )}
+            <div ref={lastMessageRef} />
           </div>
+          <MessageInput
+            selectedChat={selectedChat}
+            setSelectedChat={setSelectedChat}
+            setChats={setChats}
+            currentUser={currentUser}
+            setMessages={setMessages}
+            messages={messages}
+            socket={socket}
+          />
         </>
       ) : (
         <div className="welcome">
@@ -299,16 +308,20 @@ const Room = ({
 };
 const Container = styled.div`
   width: 100%;
-  max-height: 100vh;
   transition: 200ms width ease-in-out;
-  
+  height: 100vh;
+  /* background: #404040; */
+  background: url('../assets/Moon.png');
+  background-size: cover;
+  background-position: center;
+  background-attachment: fixed;
   &.streched {
     width: 60%;
     @media (max-width: 768px) {
       display: none;
     }
   }
-  .no-msgs{
+  .no-msgs {
     display: flex;
     align-items: center;
     justify-content: center;
@@ -326,7 +339,6 @@ const Container = styled.div`
     height: 100%;
     width: 100%;
     background: #ececec;
-    border-radius: 10px;
     h2 {
       font-size: 17px;
       span {
@@ -340,7 +352,8 @@ const Container = styled.div`
     align-items: center;
     justify-content: space-between;
     padding: 10px 20px;
-    height: 10vh;
+    min-height: 10vh;
+    background: #ffffff;
     .room-profile {
       display: flex;
       align-items: center;
@@ -442,26 +455,17 @@ const Container = styled.div`
     }
   }
   .room-body {
-    height: 90vh;
-    background-image: url("../assets/shapes.png");
-    background-size: cover;
-    background-repeat: no-repeat;
-    background-attachment: fixed;
-    background-position: center;
-    border-radius: 5px 5px 0 0;
-    .room-messages-container {
-      display: flex;
-      flex-direction: column;
-      gap: 1rem;
-      overflow-y: auto;
-      padding: 10px;
-      height: 80vh;
-      &::-webkit-scrollbar {
-        width: 0.5rem;
-        &-thumb {
-          background: #8b64ef;
-          border-radius: 0.5rem;
-        }
+    height: 80vh;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    overflow-y: auto;
+    padding: 10px;
+    &::-webkit-scrollbar {
+      width: 0.5rem;
+      &-thumb {
+        background: #8b64ef;
+        border-radius: 0.5rem;
       }
     }
 

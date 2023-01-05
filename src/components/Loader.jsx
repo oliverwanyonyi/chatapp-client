@@ -23,8 +23,8 @@ const Container = styled.div`
     }
   }
   .dot {
-    width: 15px;
-    height: 15px;
+    width: 13px;
+    height: 13px;
     border-radius: 50%;
     background: #bcbcbc;
     animation: bounce2 0.9s infinite linear forwards;

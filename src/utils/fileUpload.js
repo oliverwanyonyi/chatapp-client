@@ -1,5 +1,3 @@
-
-
 export const handleFileUpload = async(e,setLoadingUpload,setAvatarPreview,setAvatar,setMessage,setShowMessage)=>{
   console.log(e)  
   const file = e.target.files[0];
@@ -15,8 +13,7 @@ export const handleFileUpload = async(e,setLoadingUpload,setAvatarPreview,setAva
       formData.append("file", file);
       formData.append("upload_preset", "tiktalk-app");
       formData.append("cloud_name", "wanyonyi");
-      
-
+    
       try {
         setLoadingUpload(true);
         const res = await fetch("https://api.cloudinary.com/v1_1/wanyonyi/upload", {

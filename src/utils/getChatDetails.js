@@ -5,5 +5,3 @@ export const getChatDetails = (currentUser, users) => {
     return users[0];
   }
 };
-
-

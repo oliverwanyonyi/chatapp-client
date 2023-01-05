@@ -15,8 +15,8 @@ const MessageInput = ({
   setChats,
 }) => {
   const [message, setMessage] = useState("");
-  const { fetchChats, setFetchChats } = ChatAppState();
   const [memberStatus, setMemberStatus] = useState();
+  const { chats, setMessage:setInfo, setShowMessage } = ChatAppState();
   const focusRef = useRef();
 
   function stoppedTyping() {
@@ -63,17 +63,14 @@ const MessageInput = ({
           updatedAt: data.updatedAt,
         },
       ]);
-
-      setChats((prev) =>
-        prev.map((c) =>
-          c._id === selectedChat._id
-            ? {
-                ...c,
-                lastMessage: { text: data.message, updatedAt: data.updatedAt },
-              }
-            : c
-        )
-      );
+      const chatToUpdate = chats.find((c) => c._id === selectedChat._id);
+      setChats((prev) => [
+        {
+          ...chatToUpdate,
+          lastMessage: { text: data.message, updatedAt: data.updatedAt },
+        },
+        ...prev.filter((chat) => chat._id !== selectedChat._id),
+      ]);
 
       socket.emit("message-sent", {
         message,
@@ -82,6 +79,10 @@ const MessageInput = ({
           ? [...selectedChat.users.map((u) => u._id)]
           : getChatDetails(currentUser, selectedChat.users)._id,
         chatId: selectedChat._id,
+        chat: {
+          ...chatToUpdate,
+          lastMessage: { text: data.message, updatedAt: data.updatedAt },
+        },
         sender: currentUser.id,
         updatedAt: data.updatedAt,
         groupMessage: selectedChat.isGroup ? true : false,
@@ -111,17 +112,30 @@ const MessageInput = ({
       setMemberStatus(`${data.admin} removed you`);
       setSelectedChat(data.chat);
     });
+    socket.on("someone-left", (data) => {
+      setSelectedChat(data.chat);
+      setInfo({
+        type: "info",
+        text: `${data.text}`,
+      });
+      setShowMessage(true);
+      setTimeout(() => {
+        setShowMessage(false);
+      }, 5000);
+    });
   }, [socket]);
   useEffect(() => {
     focusRef.current?.focus();
-  }, []);
+  }, [selectedChat]);
 
   return (
     <Container>
       <form onSubmit={submitHandler}>
         {selectedChat.isGroup &&
         !selectedChat.users.map((u) => u._id).includes(currentUser.id) ? (
-          <p>{memberStatus || "You left"}</p>
+          <div className="disabled">
+            <p>{memberStatus || "You left"}</p>
+          </div>
         ) : (
           <>
             <input
@@ -149,7 +163,15 @@ const Container = styled.div`
     height: 80%;
     display: block;
     position: relative;
-
+    .disabled {
+      width: 100%;
+      height: 100%;
+      padding: 0 20px;
+      background: #fff;
+      border: 2px solid #8b64ef;
+      border-radius: 30px;
+      cursor: not-allowed;
+    }
     p {
       color: #f14242 !important;
       text-align: center;
@@ -160,7 +182,6 @@ const Container = styled.div`
       height: 100%;
       padding: 0 20px;
       border: 2px solid #8b64ef;
-      border-radius: 5px;
       transition: 100ms ease-in;
       font-size: 16px;
       border-radius: 30px;
